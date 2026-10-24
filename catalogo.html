@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universo Eletro Hidráulica - Catálogo de Produtos</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen pb-24">
+
+    <!-- Header / Navbar -->
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2.5 rounded-xl text-white shadow-lg shadow-blue-600/30">
+                    <i class="fa-solid fa-bolt text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-base sm:text-lg font-bold tracking-tight text-white leading-tight">Universo Eletro Hidráulica</h1>
+                    <p class="text-[11px] text-slate-400">Solicitação de Cotação e Vendas</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <a href="index.html" class="hidden sm:flex items-center gap-1.5 text-xs text-slate-400 hover:text-white bg-slate-800 border border-slate-700 px-3 py-2 rounded-xl transition-all" title="Painel Interno">
+                    <i class="fa-solid fa-lock text-slate-400"></i>
+                    <span>Painel Interno</span>
+                </a>
+
+                <!-- Botão Carrinho / Lista de Solicitação -->
+                <button onclick="abrirModalCarrinho()" class="relative bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/20">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span class="hidden sm:inline">Minha Lista</span>
+                    <span id="carrinho-badge" class="bg-white text-emerald-700 text-[11px] font-black w-5 h-5 rounded-full flex items-center justify-center">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Banner Promocional / Descrição -->
+    <section class="bg-gradient-to-b from-slate-900 to-slate-950 border-b border-slate-800/80 py-8 px-4 text-center">
+        <div class="max-w-3xl mx-auto">
+            <span class="bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-3">Catálogo Online</span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-white mb-2">Solicite seu Orçamento pelo WhatsApp</h2>
+            <p class="text-xs sm:text-sm text-slate-400">Escolha os produtos de elétrica e hidráulica que você precisa, adicione à lista e envie diretamente para a nossa equipe de vendas.</p>
+        </div>
+    </section>
+
+    <!-- Conteúdo Principal -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+
+        <!-- Barra de Pesquisa e Filtros -->
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mb-6 bg-slate-900/60 p-3 rounded-2xl border border-slate-800 backdrop-blur-sm">
+            <div class="relative w-full sm:w-96">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                    <i class="fa-solid fa-search text-xs"></i>
+                </span>
+                <input type="text" id="filtro-busca" oninput="filtrarProdutos()" placeholder="Buscar produto ou marca..." class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 transition-all">
+            </div>
+
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+                <select id="filtro-marca" onchange="filtrarProdutos()" class="w-full sm:w-48 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500">
+                    <option value="">Todas as Marcas</option>
+                </select>
+                <button onclick="limparFiltros()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 py-2.5 rounded-xl border border-slate-700 transition-all whitespace-nowrap" title="Limpar Filtros">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Grade de Produtos -->
+        <div id="grid-catalogo" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
+            <!-- Renderizado via JavaScript -->
+        </div>
+
+        <!-- Estado Vazio / Carregando -->
+        <div id="estado-carregando" class="text-center py-16">
+            <i class="fa-solid fa-circle-notch fa-spin text-blue-500 text-3xl mb-3"></i>
+            <p class="text-xs text-slate-400">Carregando catálogo de produtos...</p>
+        </div>
+
+        <div id="estado-vazio" class="hidden text-center py-16 bg-slate-900/30 rounded-2xl border border-slate-800/50">
+            <i class="fa-solid fa-box-open text-slate-600 text-4xl mb-3"></i>
+            <h3 class="text-sm font-bold text-slate-300 mb-1">Nenhum produto encontrado</h3>
+            <p class="text-xs text-slate-500">Tente buscar por outro nome ou marca.</p>
+        </div>
+
+    </main>
+
+    <!-- Barra Fixa Flutuante do Carrinho (Mobile) -->
+    <div id="barra-flutuante-carrinho" class="fixed bottom-4 left-4 right-4 sm:hidden z-30 transition-all duration-300 transform translate-y-24 opacity-0">
+        <button onclick="abrirModalCarrinho()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-5 rounded-2xl shadow-2xl flex items-center justify-between border border-emerald-400/30">
+            <div class="flex items-center gap-2">
+                <div class="bg-emerald-700 p-2 rounded-xl text-xs">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                </div>
+                <div class="text-left">
+                    <span class="block text-xs font-semibold">Minha Lista de Pedido</span>
+                    <span id="flutuante-qtd-itens" class="text-[10px] text-emerald-200">0 itens selecionados</span>
+                </div>
+            </div>
+            <span class="text-xs font-bold uppercase tracking-wider bg-white text-emerald-800 px-3 py-1.5 rounded-xl">Ver Lista <i class="fa-solid fa-chevron-right text-[10px] ml-1"></i></span>
+        </button>
+    </div>
+
+    <!-- Modal do Carrinho / Finalização do Pedido -->
+    <div id="modal-carrinho" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-3 sm:p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            
+            <!-- Modal Header -->
+            <div class="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-950/50">
+                <div class="flex items-center gap-2 text-emerald-400">
+                    <i class="fa-solid fa-clipboard-list text-lg"></i>
+                    <h3 class="font-bold text-white text-sm sm:text-base">Lista de Produtos para Orçamento</h3>
+                </div>
+                <button onclick="fecharModalCarrinho()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body (Rolável) -->
+            <div class="p-4 overflow-y-auto space-y-4 flex-1 scrollbar-thin">
+                
+                <!-- Tabela/Lista de Itens Selecionados -->
+                <div id="carrinho-itens-container" class="divide-y divide-slate-800">
+                    <!-- Preenchido via JavaScript -->
+                </div>
+
+                <div id="carrinho-vazio-msg" class="text-center py-8 text-slate-500 text-xs">
+                    <i class="fa-solid fa-cart-arrow-down text-3xl text-slate-700 mb-2"></i>
+                    <p>Sua lista está vazia no momento.</p>
+                    <p class="text-[10px] text-slate-600">Adicione produtos do catálogo para gerar o orçamento.</p>
+                </div>
+
+                <!-- Formulário de Dados do Cliente -->
+                <div id="form-cliente-container" class="hidden pt-4 border-t border-slate-800 space-y-3">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-pen text-blue-400"></i> Seus Dados para Atendimento
+                    </h4>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Seu Nome / Empresa *</label>
+                            <input type="text" id="cli-nome" required placeholder="Ex: João Silva" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-400 mb-1">Tipo de Entrega / Retirada</label>
+                            <select id="cli-entrega" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+                                <option value="Retirada na Loja">Retirada na Loja</option>
+                                <option value="Entrega no Endereço">Entrega no Endereço</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mb-1">Observações adicionais (opcional)</label>
+                        <textarea id="cli-obs" rows="2" placeholder="Ex: Preciso também de fita isolante..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 resize-none"></textarea>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 border-t border-slate-800 bg-slate-950/50 flex flex-col sm:flex-row justify-between items-center gap-3">
+                <button onclick="fecharModalCarrinho()" class="w-full sm:w-auto text-xs text-slate-400 hover:text-white py-2 px-4 rounded-xl border border-slate-800 hover:bg-slate-800 transition-all">
+                    Continuar Escolhendo
+                </button>
+                <button id="btn-enviar-whatsapp" onclick="enviarPedidoWhatsApp()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-6 rounded-xl text-xs transition-all shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fa-brands fa-whatsapp text-base"></i>
+                    <span>Enviar Orçamento no WhatsApp</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Script de Lógica e Conexão Supabase -->
+    <script>
+        // Configuração Supabase e WhatsApp
+        const SUPABASE_URL = 'https://wwuivpaeldpigajmqclg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3dWl2cGFlbGRwaWdham1xY2xnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3OTc3MTgsImV4cCI6MjEwODM3MzcxOH0.BBCGPPfXhknNulycPZyOu--A2XKzgo-Tpx3qGfKp0DE';
+        
+        // Número configurado diretamente para a loja
+        const WHATSAPP_NUMERO = '553132610329'; 
+
+        let _supabase;
+        let produtos = [];
+        let carrinho = [];
+
+        // Inicialização
+        window.addEventListener('DOMContentLoaded', () => {
+            try {
+                if (window.supabase) {
+                    const { createClient } = window.supabase;
+                    _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                }
+            } catch (e) {
+                console.error("Erro na inicialização do Supabase:", e);
+            }
+
+            carregarCarrinhoLocal();
+            carregarProdutosCatalogo();
+        });
+
+        // Carregar do Supabase apenas produtos com estoque > 0
+        async function carregarProdutosCatalogo() {
+            const elCarregando = document.getElementById('estado-carregando');
+            const elVazio = document.getElementById('estado-vazio');
+
+            if (!_supabase) {
+                if (elCarregando) elCarregando.classList.add('hidden');
+                if (elVazio) elVazio.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                // Apenas busca produtos onde quantidade é maior que 0
+                const { data, error } = await _supabase
+                    .from('produtos')
+                    .select('*')
+                    .gt('quantidade', 0);
+
+                if (error) throw error;
+
+                produtos = data || [];
+
+                if (elCarregando) elCarregando.classList.add('hidden');
+
+                if (produtos.length === 0) {
+                    if (elVazio) elVazio.classList.remove('hidden');
+                } else {
+                    popularFiltroMarcas();
+                    renderizarCatalogo(produtos);
+                }
+            } catch (err) {
+                console.error("Erro ao buscar catálogo do Supabase:", err);
+                if (elCarregando) elCarregando.classList.add('hidden');
+                if (elVazio) elVazio.classList.remove('hidden');
+            }
+        }
+
+        // Popular Dropdown de Marcas
+        function popularFiltroMarcas() {
+            const selectMarca = document.getElementById('filtro-marca');
+            if (!selectMarca) return;
+
+            const marcasUnicas = [...new Set(produtos.map(p => p.marca).filter(Boolean))].sort();
+            
+            selectMarca.innerHTML = '<option value="">Todas as Marcas</option>';
+            marcasUnicas.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = m;
+                selectMarca.appendChild(opt);
+            });
+        }
+
+        // Renderizar Grade de Cards (Sem preços nem quantidades de estoque)
+        function renderizarCatalogo(lista) {
+            const grid = document.getElementById('grid-catalogo');
+            const elVazio = document.getElementById('estado-vazio');
+            if (!grid) return;
+
+            grid.innerHTML = '';
+
+            if (lista.length === 0) {
+                if (elVazio) elVazio.classList.remove('hidden');
+                return;
+            } else {
+                if (elVazio) elVazio.classList.add('hidden');
+            }
+
+            lista.forEach(p => {
+                const itemNoCarrinho = carrinho.find(c => c.id == p.id);
+                const qtdNoCarrinho = itemNoCarrinho ? itemNoCarrinho.qtd : 0;
+
+                const card = document.createElement('div');
+                card.className = "bg-slate-900/80 border border-slate-800 rounded-2xl p-3 flex flex-col justify-between hover:border-slate-700 transition-all shadow-md group";
+                
+                card.innerHTML = `
+                    <div>
+                        <div class="w-full h-32 sm:h-36 rounded-xl overflow-hidden bg-slate-950 mb-2.5 border border-slate-800/80 relative">
+                            <img src="${p.foto || 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=300'}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" alt="${p.nome}">
+                            ${p.marca ? `<span class="absolute top-2 left-2 bg-slate-950/80 backdrop-blur-md border border-slate-800 text-slate-300 text-[10px] font-semibold px-2 py-0.5 rounded-md">${p.marca}</span>` : ''}
+                        </div>
+                        <h3 class="font-bold text-white text-xs sm:text-sm line-clamp-2 mb-1">${p.nome}</h3>
+                    </div>
+
+                    <div class="pt-2">
+                        ${qtdNoCarrinho > 0 ? `
+                            <div class="flex items-center justify-between bg-slate-950 border border-slate-800 rounded-xl p-1">
+                                <button onclick="alterarQtdCarrinho('${p.id}', -1)" class="w-7 h-7 bg-slate-800 hover:bg-rose-500/20 hover:text-rose-400 text-slate-300 rounded-lg flex items-center justify-center text-xs transition-all"><i class="fa-solid fa-minus"></i></button>
+                                <span class="font-bold text-xs text-emerald-400">${qtdNoCarrinho} na lista</span>
+                                <button onclick="alterarQtdCarrinho('${p.id}', 1)" class="w-7 h-7 bg-slate-800 hover:bg-emerald-500/20 hover:text-emerald-400 text-slate-300 rounded-lg flex items-center justify-center text-xs transition-all"><i class="fa-solid fa-plus"></i></button>
+                            </div>
+                        ` : `
+                            <button onclick="adicionarAoCarrinho('${p.id}')" class="w-full bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 font-semibold py-2 px-3 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-plus"></i> Adicionar
+                            </button>
+                        `}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Filtro em Tempo Real
+        function filtrarProdutos() {
+            const busca = (document.getElementById('filtro-busca')?.value || '').toLowerCase();
+            const marca = document.getElementById('filtro-marca')?.value || '';
+
+            const filtrados = produtos.filter(p => {
+                const atendeNomeMarca = p.nome.toLowerCase().includes(busca) || (p.marca && p.marca.toLowerCase().includes(busca));
+                const atendeMarcaEspecifica = marca === '' || p.marca === marca;
+                return atendeNomeMarca && atendeMarcaEspecifica;
+            });
+
+            renderizarCatalogo(filtrados);
+        }
+
+        function limparFiltros() {
+            if (document.getElementById('filtro-busca')) document.getElementById('filtro-busca').value = '';
+            if (document.getElementById('filtro-marca')) document.getElementById('filtro-marca').value = '';
+            renderizarCatalogo(produtos);
+        }
+
+        // ================= GERENCIAMENTO DO CARRINHO =================
+        function adicionarAoCarrinho(id) {
+            const p = produtos.find(item => item.id == id);
+            if (!p) return;
+
+            const existente = carrinho.find(item => item.id == id);
+            if (existente) {
+                existente.qtd += 1;
+            } else {
+                carrinho.push({
+                    id: p.id,
+                    nome: p.nome,
+                    marca: p.marca || '',
+                    qtd: 1
+                });
+            }
+
+            salvarCarrinhoLocal();
+            atualizarInterfaceCarrinho();
+            filtrarProdutos();
+        }
+
+        function alterarQtdCarrinho(id, delta) {
+            const idx = carrinho.findIndex(item => item.id == id);
+            if (idx !== -1) {
+                carrinho[idx].qtd += delta;
+                if (carrinho[idx].qtd <= 0) {
+                    carrinho.splice(idx, 1);
+                }
+            }
+            salvarCarrinhoLocal();
+            atualizarInterfaceCarrinho();
+            filtrarProdutos();
+            renderizarItensModalCarrinho();
+        }
+
+        function salvarCarrinhoLocal() {
+            localStorage.setItem('universo_catalogo_carrinho', JSON.stringify(carrinho));
+        }
+
+        function carregarCarrinhoLocal() {
+            const salvos = localStorage.getItem('universo_catalogo_carrinho');
+            if (salvos) {
+                try {
+                    carrinho = JSON.parse(salvos);
+                } catch(e) {}
+            }
+            atualizarInterfaceCarrinho();
+        }
+
+        function atualizarInterfaceCarrinho() {
+            const totalItens = carrinho.reduce((sum, item) => sum + item.qtd, 0);
+            
+            // Badge superior
+            const badge = document.getElementById('carrinho-badge');
+            if (badge) badge.innerText = totalItens;
+
+            // Barra flutuante móvel
+            const barraFlutuante = document.getElementById('barra-flutuante-carrinho');
+            const flutuanteQtd = document.getElementById('flutuante-qtd-itens');
+
+            if (barraFlutuante) {
+                if (totalItens > 0) {
+                    barraFlutuante.classList.remove('translate-y-24', 'opacity-0');
+                    if (flutuanteQtd) flutuanteQtd.innerText = `${totalItens} ${totalItens === 1 ? 'item selecionado' : 'itens selecionados'}`;
+                } else {
+                    barraFlutuante.classList.add('translate-y-24', 'opacity-0');
+                }
+            }
+
+            // Habilitar/Desabilitar Botão de Envio
+            const btnEnviar = document.getElementById('btn-enviar-whatsapp');
+            if (btnEnviar) btnEnviar.disabled = totalItens === 0;
+        }
+
+        // Modal Carrinho
+        function abrirModalCarrinho() {
+            renderizarItensModalCarrinho();
+            document.getElementById('modal-carrinho').classList.remove('hidden');
+        }
+
+        function fecharModalCarrinho() {
+            document.getElementById('modal-carrinho').classList.add('hidden');
+        }
+
+        function renderizarItensModalCarrinho() {
+            const container = document.getElementById('carrinho-itens-container');
