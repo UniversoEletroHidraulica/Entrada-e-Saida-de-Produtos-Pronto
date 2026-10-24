@@ -466,18 +466,25 @@
                 }
             }
         }
-
+        
         async function carregarDadosSupabase() {
             if (!_supabase) return;
             try {
-                const { data: dadosProdutos, error: errProd } = await _supabase.from('produtos').select('*');
+                // Busca os produtos ordenados pelo ID
+                const { data: dadosProdutos, error: errProd } = await _supabase
+                    .from('produtos')
+                    .select('*');
+                    
                 if (errProd) throw errProd;
                 if (dadosProdutos) produtos = dadosProdutos;
-
-                const { data: dadosSaidas, error: errSaida } = await _supabase.from('saidas').select('*');
+        
+                const { data: dadosSaidas, error: errSaida } = await _supabase
+                    .from('saidas')
+                    .select('*');
+                    
                 if (errSaida) throw errSaida;
                 if (dadosSaidas) saidas = dadosSaidas;
-
+        
                 salvarCacheLocal();
                 atualizarTodasTelas();
             } catch (err) {
@@ -561,18 +568,49 @@
             });
         }
 
+                // Conversão e Compressão de Foto (Reduz o peso para não travar o Supabase)
         function converterFoto(event) {
             const file = event.target.files[0];
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    const base64 = e.target.result;
-                    document.getElementById('prod-foto-base64').value = base64;
-                    const img = document.getElementById('preview-img');
-                    const icon = document.getElementById('preview-icon');
-                    img.src = base64;
-                    img.classList.remove('hidden');
-                    icon.classList.add('hidden');
+                    const imgElement = new Image();
+                    imgElement.src = e.target.result;
+                    imgElement.onload = function() {
+                        // Redimensiona para no máximo 300px de largura/altura
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 300;
+                        const MAX_HEIGHT = 300;
+                        let width = imgElement.width;
+                        let height = imgElement.height;
+        
+                        if (width > height) {
+                            if (width > MAX_WIDTH) {
+                                height *= MAX_WIDTH / width;
+                                width = MAX_WIDTH;
+                            }
+                        } else {
+                            if (height > MAX_HEIGHT) {
+                                width *= MAX_HEIGHT / height;
+                                height = MAX_HEIGHT;
+                            }
+                        }
+        
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(imgElement, 0, 0, width, height);
+        
+                        // Exporta como JPEG leve (qualidade 0.6)
+                        const base64Leve = canvas.toDataURL('image/jpeg', 0.6);
+                        
+                        document.getElementById('prod-foto-base64').value = base64Leve;
+                        const imgPreview = document.getElementById('preview-img');
+                        const iconPreview = document.getElementById('preview-icon');
+                        imgPreview.src = base64Leve;
+                        imgPreview.classList.remove('hidden');
+                        iconPreview.classList.add('hidden');
+                    };
                 };
                 reader.readAsDataURL(file);
             }
