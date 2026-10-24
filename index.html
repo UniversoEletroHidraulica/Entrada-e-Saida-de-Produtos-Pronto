@@ -3,45 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Universo Eletro Hidráulica - Controle de Estoque e Vendas</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Universo Eletro Hidráulica - Controle de Estoque</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Supabase JS Client UMD -->
+    <!-- Supabase JS Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- jsPDF for PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-    
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
-                    colors: {
-                        brand: {
-                            50: '#eef6ff',
-                            100: '#d9ecff',
-                            500: '#0284c7',
-                            600: '#026bc5',
-                            700: '#0353a4',
-                            800: '#063f82',
-                            900: '#0a2540',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+        /* Custom scrollbar for mobile responsiveness */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -50,1235 +27,1159 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-    <!-- Toast Notification Container -->
-    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
-
-    <!-- Modal Container -->
-    <div id="modal-container"></div>
-
-    <!-- Header / Brand -->
-    <header class="bg-brand-900 text-white shadow-lg sticky top-0 z-30">
-        <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+    <!-- Top Navigation Header -->
+    <header class="bg-blue-900 text-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-3">
             <div class="flex items-center gap-3">
-                <div class="bg-brand-500 p-2.5 rounded-xl shadow text-white flex items-center justify-center">
-                    <i class="fa-solid fa-bolt-lightning text-xl"></i>
+                <div class="bg-amber-400 text-blue-900 p-2.5 rounded-xl shadow font-bold text-xl flex items-center justify-center">
+                    <i class="fa-solid fa-bolt"></i>
                 </div>
                 <div>
-                    <h1 class="text-xl sm:text-2xl font-bold tracking-tight">Universo Eletro Hidráulica</h1>
-                    <p class="text-xs sm:text-sm text-brand-100 font-medium opacity-90">Controle Integrado de Estoque e Vendas</p>
+                    <h1 class="text-lg sm:text-xl font-bold tracking-tight">Universo Eletro Hidráulica</h1>
+                    <p class="text-xs text-blue-200">Controle de Estoque e Vendas Inteligente</p>
                 </div>
             </div>
-            
-            <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-                <div id="sync-status" class="flex items-center gap-2 text-xs bg-brand-800 px-3 py-1.5 rounded-full border border-brand-700">
-                    <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" id="sync-dot"></span>
-                    <span id="sync-text" class="text-brand-100 font-medium">Conectando ao Supabase...</span>
-                </div>
-                <button onclick="refreshAllData()" title="Atualizar dados" class="bg-brand-800 hover:bg-brand-700 text-white p-2 rounded-lg transition border border-brand-700 flex items-center justify-center">
-                    <i class="fa-solid fa-rotate"></i>
-                </button>
+            <!-- Sync Status Indicator -->
+            <div class="flex items-center gap-2 bg-blue-950/60 px-3 py-1.5 rounded-full text-xs border border-blue-800">
+                <span id="sync-dot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                <span id="sync-text" class="text-blue-100 font-medium">Conectando ao Supabase...</span>
             </div>
         </div>
-
+        
         <!-- Navigation Tabs -->
-        <nav class="bg-brand-800 border-t border-brand-700 overflow-x-auto scrollbar-none">
-            <div class="max-w-7xl mx-auto px-2 sm:px-6 flex space-x-1 sm:space-x-2 py-2">
-                <button onclick="switchTab('estoque')" id="btn-tab-estoque" class="tab-btn whitespace-nowrap px-4 py-2 rounded-lg font-medium text-sm transition flex items-center gap-2 bg-brand-600 text-white shadow">
-                    <i class="fa-solid fa-boxes-stacked"></i> Estoque Disponível
+        <nav class="bg-blue-950 px-4 overflow-x-auto">
+            <div class="max-w-7xl mx-auto flex space-x-1 sm:space-x-2 py-2">
+                <button onclick="switchTab('entrada')" id="btn-entrada" class="tab-btn px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap bg-blue-600 text-white shadow">
+                    <i class="fa-solid fa-boxes-stacked mr-1.5"></i> Entrada / Produtos
                 </button>
-                <button onclick="switchTab('entrada')" id="btn-tab-entrada" class="tab-btn whitespace-nowrap px-4 py-2 rounded-lg font-medium text-sm transition flex items-center gap-2 text-brand-100 hover:bg-brand-700">
-                    <i class="fa-solid fa-plus-circle"></i> Entrada / Cadastro
+                <button onclick="switchTab('estoque')" id="btn-estoque" class="tab-btn px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap text-blue-200 hover:bg-blue-900 hover:text-white">
+                    <i class="fa-solid fa-warehouse mr-1.5"></i> Estoque Disponível
                 </button>
-                <button onclick="switchTab('saida')" id="btn-tab-saida" class="tab-btn whitespace-nowrap px-4 py-2 rounded-lg font-medium text-sm transition flex items-center gap-2 text-brand-100 hover:bg-brand-700">
-                    <i class="fa-solid fa-cart-shopping"></i> Saída de Produtos
+                <button onclick="switchTab('saida')" id="btn-saida" class="tab-btn px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap text-blue-200 hover:bg-blue-900 hover:text-white">
+                    <i class="fa-solid fa-cash-register mr-1.5"></i> Saída / Vendas
                 </button>
-                <button onclick="switchTab('acompanhamento')" id="btn-tab-acompanhamento" class="tab-btn whitespace-nowrap px-4 py-2 rounded-lg font-medium text-sm transition flex items-center gap-2 text-brand-100 hover:bg-brand-700">
-                    <i class="fa-solid fa-chart-line"></i> Acompanhamento Saídas
+                <button onclick="switchTab('acompanhamento')" id="btn-acompanhamento" class="tab-btn px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap text-blue-200 hover:bg-blue-900 hover:text-white">
+                    <i class="fa-solid fa-chart-line mr-1.5"></i> Acompanhamento Saídas
                 </button>
-                <button onclick="switchTab('compras')" id="btn-tab-compras" class="tab-btn whitespace-nowrap px-4 py-2 rounded-lg font-medium text-sm transition flex items-center gap-2 text-brand-100 hover:bg-brand-700">
-                    <i class="fa-solid fa-clipboard-list"></i> Lista de Compras
+                <button onclick="switchTab('compras')" id="btn-compras" class="tab-btn px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap text-blue-200 hover:bg-blue-900 hover:text-white">
+                    <i class="fa-solid fa-cart-shopping mr-1.5"></i> Lista de Compras
                 </button>
             </div>
         </nav>
     </header>
 
-    <!-- Main Container -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex-grow w-full">
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 py-6">
 
-        <!-- ================= TAB 1: ESTOQUE DISPONÍVEL ================= -->
-        <section id="tab-estoque" class="tab-content active space-y-6">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
+        <!-- TAB 1: ENTRADA / CADASTRO DE PRODUTOS -->
+        <section id="tab-entrada" class="tab-content active space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100">
                 <div>
-                    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                        <i class="fa-solid fa-boxes-stacked text-brand-600"></i> Estoque Disponível
-                    </h2>
-                    <p class="text-sm text-slate-500 mt-1">Gerencie seu estoque em tempo real. Produtos zerados ficam ocultos desta aba.</p>
+                    <h2 class="text-xl font-bold text-slate-800">Cadastro e Entrada de Produtos</h2>
+                    <p class="text-sm text-slate-500">Cadastre novos itens ou adicione quantidades ao estoque existente.</p>
                 </div>
-                <div class="flex items-center gap-3 w-full sm:w-auto">
-                    <div class="relative flex-grow sm:w-64">
-                        <i class="fa-solid fa-search absolute left-3 top-3 text-slate-400"></i>
-                        <input type="text" id="search-estoque" oninput="renderEstoque()" placeholder="Pesquisar produto ou marca..." class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
-                    </div>
+                <button onclick="openProductModal()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold shadow-md transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-plus-circle"></i> Novo Produto
+                </button>
+            </div>
+
+            <!-- Filtro e Busca na Entrada -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row gap-3">
+                <div class="relative flex-grow">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                        <i class="fa-solid fa-search"></i>
+                    </span>
+                    <input type="text" id="search-entrada" oninput="renderEntradaList()" placeholder="Buscar por nome, marca ou código..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                 </div>
             </div>
 
-            <!-- Stats Bar -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Itens em Estoque</p>
-                        <p class="text-2xl font-bold text-slate-800 mt-1" id="stat-total-itens">0</p>
-                    </div>
-                    <div class="bg-blue-50 text-brand-600 p-3 rounded-xl"><i class="fa-solid fa-box text-lg"></i></div>
+            <!-- Lista de Produtos para Gerenciamento -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                <th class="py-3 px-4">Foto</th>
+                                <th class="py-3 px-4">Produto / Marca</th>
+                                <th class="py-3 px-4 text-center">Estoque</th>
+                                <th class="py-3 px-4 text-right">Preço Venda</th>
+                                <th class="py-3 px-4 text-center">Status</th>
+                                <th class="py-3 px-4 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="produtos-table-body" class="divide-y divide-slate-100 text-sm">
+                            <!-- Inserido dinamicamente via JS -->
+                        </tbody>
+                    </table>
                 </div>
-                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-wider text-amber-600">Próximos de Acabar (≤ 3 un)</p>
-                        <p class="text-2xl font-bold text-amber-600 mt-1" id="stat-baixo-estoque">0</p>
-                    </div>
-                    <div class="bg-amber-50 text-amber-600 p-3 rounded-xl"><i class="fa-solid fa-triangle-exclamation text-lg"></i></div>
-                </div>
-                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-wider text-emerald-600">Valor Total Estimado</p>
-                        <p class="text-2xl font-bold text-emerald-600 mt-1" id="stat-valor-total">R$ 0,00</p>
-                    </div>
-                    <div class="bg-emerald-50 text-emerald-600 p-3 rounded-xl"><i class="fa-solid fa-wallet text-lg"></i></div>
-                </div>
-            </div>
-
-            <!-- Products Grid -->
-            <div id="grid-estoque" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                <!-- Dinamicamente preenchido -->
-            </div>
-            
-            <div id="empty-estoque" class="hidden text-center py-16 bg-white rounded-2xl border border-slate-200 shadow-sm">
-                <div class="text-slate-300 text-5xl mb-3"><i class="fa-solid fa-box-open"></i></div>
-                <p class="text-slate-600 font-medium">Nenhum produto disponível no estoque.</p>
-                <p class="text-slate-400 text-sm mt-1">Cadastre novos produtos na aba "Entrada / Cadastro".</p>
             </div>
         </section>
 
-        <!-- ================= TAB 2: ENTRADA / CADASTRO ================= -->
-        <section id="tab-entrada" class="tab-content space-y-6">
-            <div class="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200">
-                <div class="border-b border-slate-100 pb-4 mb-6">
-                    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                        <i class="fa-solid fa-plus-circle text-brand-600"></i> Entrada e Cadastro de Produtos
-                    </h2>
-                    <p class="text-sm text-slate-500 mt-1">Preencha os dados abaixo para cadastrar um produto novo ou adicionar estoque a um existente.</p>
+        <!-- TAB 2: ESTOQUE DISPONÍVEL -->
+        <section id="tab-estoque" class="tab-content space-y-6">
+            <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">Estoque Disponível</h2>
+                    <p class="text-sm text-slate-500">Produtos com estoque maior que zero. Produtos zerados foram ocultados.</p>
                 </div>
+                <div class="w-full sm:w-72 relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                        <i class="fa-solid fa-search"></i>
+                    </span>
+                    <input type="text" id="search-estoque" oninput="renderEstoqueList()" placeholder="Filtrar estoque disponível..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                </div>
+            </div>
 
-                <form id="form-entrada" onsubmit="handleEntradaSubmit(event)" class="space-y-5">
-                    <div class="bg-brand-50 p-4 rounded-xl border border-brand-100">
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-brand-800 mb-1">Reposição Rápida (Opcional)</label>
-                        <select id="entrada-existente" onchange="preencherDadosExistentes(this.value)" class="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
-                            <option value="">-- Cadastrar Novo Produto --</option>
-                        </select>
-                        <p class="text-xs text-brand-700 mt-1">Selecione se deseja apenas somar quantidade a um item já cadastrado.</p>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Nome do Produto *</label>
-                            <input type="text" id="prod-nome" required placeholder="Ex: Disjuntor 32A Din" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Marca *</label>
-                            <input type="text" id="prod-marca" required placeholder="Ex: Siemens / Schneider" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Quantidade Inicial / Adicional *</label>
-                            <input type="number" id="prod-qtd" min="1" required placeholder="Ex: 15" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Preço Unitário (R$) *</label>
-                            <input type="number" step="0.01" min="0" id="prod-preco" required placeholder="Ex: 45.90" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Foto do Produto (Câmera ou Arquivo)</label>
-                        <div class="flex flex-col sm:flex-row items-center gap-4 mt-1">
-                            <div class="w-24 h-24 bg-slate-100 rounded-xl border border-dashed border-slate-300 flex items-center justify-center overflow-hidden relative flex-shrink-0">
-                                <img id="preview-img" src="" alt="Preview" class="w-full h-full object-cover hidden">
-                                <i id="preview-icon" class="fa-solid fa-camera text-slate-400 text-xl"></i>
-                            </div>
-                            <div class="flex-grow w-full space-y-2">
-                                <input type="file" id="prod-foto-file" accept="image/*" onchange="handleImageUpload(event)" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 cursor-pointer">
-                                <input type="text" id="prod-foto-url" placeholder="Ou cole a URL da imagem aqui" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500" oninput="updateImageUrlPreview(this.value)">
-                            </div>
-                        </div>
-                    </div>
-
-                    <input type="hidden" id="edit-prod-id" value="">
-
-                    <div class="pt-4 flex items-center gap-3">
-                        <button type="submit" id="btn-salvar-produto" class="flex-grow bg-brand-600 hover:bg-brand-700 text-white font-medium py-3 px-6 rounded-xl transition shadow flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-check"></i> Salvar no Estoque
-                        </button>
-                        <button type="button" onclick="resetFormEntrada()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium py-3 px-4 rounded-xl transition">
-                            Limpar
-                        </button>
-                    </div>
-                </form>
+            <!-- Grid de Estoque Disponível -->
+            <div id="estoque-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- Inserido dinamicamente via JS -->
             </div>
         </section>
 
-        <!-- ================= TAB 3: SAÍDA DE PRODUTOS ================= -->
+        <!-- TAB 3: SAÍDA DE PRODUTOS (VENDAS E TRANSFERÊNCIAS) -->
         <section id="tab-saida" class="tab-content space-y-6">
-            <div class="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200">
-                <div class="border-b border-slate-100 pb-4 mb-6">
-                    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                        <i class="fa-solid fa-cart-shopping text-brand-600"></i> Saída de Produtos (Venda ou Transferência)
-                    </h2>
-                    <p class="text-sm text-slate-500 mt-1">Registre a saída e o estoque será abatido automaticamente.</p>
-                </div>
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 max-w-2xl mx-auto">
+                <h2 class="text-xl font-bold text-slate-800 mb-1"><i class="fa-solid fa-cash-register text-blue-600 mr-2"></i> Registrar Saída (Venda ou Transferência)</h2>
+                <p class="text-sm text-slate-500 mb-6">Preencha os dados da transação para dar baixa automática no estoque.</p>
 
-                <form id="form-saida" onsubmit="handleSaidaSubmit(event)" class="space-y-5">
+                <form id="form-saida" onsubmit="submitSaida(event)" class="space-y-4">
                     <div>
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Selecionar Produto *</label>
-                        <select id="saida-produto-id" required onchange="onSaidaProductChange()" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Selecione o Produto *</label>
+                        <select id="saida-produto-id" onchange="onSelectSaidaProduto()" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                             <option value="">-- Escolha um produto disponível --</option>
                         </select>
-                        <p id="saida-estoque-info" class="text-xs text-slate-500 mt-1"></p>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Tipo de Saída *</label>
-                            <select id="saida-tipo" required class="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Tipo de Saída *</label>
+                            <select id="saida-tipo" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                                 <option value="Venda">Venda</option>
                                 <option value="Transferência de Loja">Transferência de Loja</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Quantidade *</label>
-                            <input type="number" id="saida-qtd" min="1" required oninput="calcularTotalSaida()" placeholder="Ex: 2" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Quantidade *</label>
+                            <input type="number" id="saida-quantidade" min="1" value="1" oninput="calcularTotalSaida()" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Valor Unitário (R$) *</label>
-                            <input type="number" step="0.01" min="0" id="saida-valor-unit" required oninput="calcularTotalSaida()" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Vendedor *</label>
+                            <div class="flex gap-2">
+                                <select id="saida-vendedor" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                                    <!-- Preenchido via JS -->
+                                </select>
+                                <button type="button" onclick="openVendedorModal()" class="bg-slate-200 hover:bg-slate-300 px-3 py-2 rounded-xl text-slate-700 font-bold" title="Adicionar novo vendedor">+</button>
+                            </div>
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Valor Total (R$) *</label>
-                            <input type="number" step="0.01" min="0" id="saida-valor-total" required class="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Data e Horário *</label>
+                            <input type="datetime-local" id="saida-data" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
                         <div>
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Vendedor *</label>
-                            <select id="saida-vendedor" required onchange="checkNovoVendedor(this.value)" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
-                                <option value="">-- Selecione o Vendedor --</option>
-                                <option value="Douglas">Douglas</option>
-                                <option value="Gleydson">Gleydson</option>
-                                <option value="Nicolas">Nicolas</option>
-                                <option value="Alexandre">Alexandre</option>
-                                <option value="OUTRO">+ Adicionar Novo Vendedor...</option>
-                            </select>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Preço Unitário (R$) *</label>
+                            <input type="number" step="0.01" id="saida-preco-unit" oninput="calcularTotalSaida()" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-semibold text-blue-900">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Data e Horário *</label>
-                            <input type="datetime-local" id="saida-data" required class="w-full px-4 py-2.5 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Valor Total (R$) *</label>
+                            <input type="number" step="0.01" id="saida-valor-total" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-bold text-emerald-700">
                         </div>
                     </div>
 
-                    <div id="div-novo-vendedor" class="hidden bg-slate-50 p-4 rounded-xl border border-slate-200">
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Nome do Novo Vendedor</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="input-novo-vendedor" placeholder="Digite o nome do vendedor" class="flex-grow px-3 py-2 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
-                            <button type="button" onclick="salvarNovoVendedor()" class="bg-brand-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-brand-700 transition">Adicionar</button>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-3 px-6 rounded-xl transition shadow flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-check"></i> Registrar Saída
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold p-3.5 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mt-4">
+                        <i class="fa-solid fa-check-circle"></i> Concluir Saída / Baixa no Estoque
                     </button>
                 </form>
             </div>
         </section>
 
-        <!-- ================= TAB 4: ACOMPANHAMENTO DE SAÍDAS ================= -->
+        <!-- TAB 4: ACOMPANHAMENTO DE SAÍDA -->
         <section id="tab-acompanhamento" class="tab-content space-y-6">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
+            <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                        <i class="fa-solid fa-chart-line text-brand-600"></i> Acompanhamento de Saídas
-                    </h2>
-                    <p class="text-sm text-slate-500 mt-1">Filtre vendas e transferências por período e corrija dados se necessário.</p>
+                    <h2 class="text-xl font-bold text-slate-800">Acompanhamento de Saídas e Vendas</h2>
+                    <p class="text-sm text-slate-500">Histórico de vendas e transferências realizadas pela equipe.</p>
                 </div>
-                <div class="flex items-center gap-2 w-full sm:w-auto">
-                    <select id="filtro-periodo" onchange="renderAcompanhamento()" class="px-4 py-2.5 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-auto">
-                        <option value="diario">Hoje (Diário)</option>
-                        <option value="semanal">Últimos 7 Dias (Semanal)</option>
-                        <option value="mensal" selected>Este Mês (Mensal)</option>
-                        <option value="todos">Todos os Registros</option>
-                    </select>
+                <!-- Filtros de Período -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="setPeriodoFiltro('diario')" id="filtro-diario" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-blue-600 text-white shadow">Diário</button>
+                    <button onclick="setPeriodoFiltro('semanal')" id="filtro-semanal" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200">Semanal</button>
+                    <button onclick="setPeriodoFiltro('mensal')" id="filtro-mensal" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200">Mensal</button>
+                    <button onclick="setPeriodoFiltro('todos')" id="filtro-todos" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200">Todos</button>
                 </div>
             </div>
 
-            <!-- Stats Bar Saídas -->
+            <!-- Card Resumo do Período -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total de Saídas no Período</p>
-                        <p class="text-2xl font-bold text-slate-800 mt-1" id="stat-saidas-qtd">0</p>
-                    </div>
-                    <div class="bg-blue-50 text-brand-600 p-3 rounded-xl"><i class="fa-solid fa-receipt text-lg"></i></div>
+                <div class="bg-gradient-to-br from-blue-900 to-blue-800 text-white p-5 rounded-2xl shadow">
+                    <p class="text-xs uppercase tracking-wider text-blue-200 font-medium">Total em Vendas no Período</p>
+                    <h3 id="resumo-total-vendas" class="text-2xl sm:text-3xl font-extrabold mt-1">R$ 0,00</h3>
                 </div>
-                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <p class="text-xs font-semibold uppercase tracking-wider text-emerald-600">Faturamento no Período</p>
-                        <p class="text-2xl font-bold text-emerald-600 mt-1" id="stat-saidas-faturamento">R$ 0,00</p>
-                    </div>
-                    <div class="bg-emerald-50 text-emerald-600 p-3 rounded-xl"><i class="fa-solid fa-dollar-sign text-lg"></i></div>
+                <div class="bg-gradient-to-br from-emerald-800 to-teal-700 text-white p-5 rounded-2xl shadow">
+                    <p class="text-xs uppercase tracking-wider text-emerald-200 font-medium">Itens Saídos no Período</p>
+                    <h3 id="resumo-total-itens" class="text-2xl sm:text-3xl font-extrabold mt-1">0 un.</h3>
                 </div>
             </div>
 
-            <!-- Table of Saídas -->
-            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <!-- Tabela de Saídas -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase tracking-wider text-slate-600">
-                                <th class="p-4">Data / Hora</th>
-                                <th class="p-4">Produto</th>
-                                <th class="p-4">Tipo</th>
-                                <th class="p-4">Qtd</th>
-                                <th class="p-4">Valor Total</th>
-                                <th class="p-4">Vendedor</th>
-                                <th class="p-4 text-right">Ações</th>
+                            <tr class="bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                <th class="py-3 px-4">Data/Hora</th>
+                                <th class="py-3 px-4">Produto</th>
+                                <th class="py-3 px-4 text-center">Tipo</th>
+                                <th class="py-3 px-4 text-center">Qtd</th>
+                                <th class="py-3 px-4">Vendedor</th>
+                                <th class="py-3 px-4 text-right">Total</th>
+                                <th class="py-3 px-4 text-right">Ações</th>
                             </tr>
                         </thead>
-                        <tbody id="tabela-acompanhamento-body" class="divide-y divide-slate-100 text-sm text-slate-700">
+                        <tbody id="saidas-table-body" class="divide-y divide-slate-100 text-sm">
                             <!-- Preenchido via JS -->
                         </tbody>
                     </table>
                 </div>
-                <div id="empty-acompanhamento" class="hidden text-center py-12">
-                    <p class="text-slate-500">Nenhum registro encontrado para este período.</p>
-                </div>
             </div>
         </section>
 
-        <!-- ================= TAB 5: LISTA DE COMPRAS ================= -->
+        <!-- TAB 5: LISTA DE COMPRAS -->
         <section id="tab-compras" class="tab-content space-y-6">
-            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4 mb-6">
-                    <div>
-                        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
-                            <i class="fa-solid fa-clipboard-list text-brand-600"></i> Lista de Compras & Sugestões
-                        </h2>
-                        <p class="text-sm text-slate-500 mt-1">Produtos zerados ou próximos de acabar aparecem aqui como sugestão automática.</p>
-                    </div>
-                    <button onclick="gerarPdfListaCompras()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 px-5 rounded-xl transition shadow flex items-center gap-2 text-sm">
+            <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-800">Lista de Compras e Reposição</h2>
+                    <p class="text-sm text-slate-500">Sugestões automáticas baseadas em estoque baixo/zerado e pedidos personalizados.</p>
+                </div>
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <button onclick="openCustomItemModal()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Novo Item Manual
+                    </button>
+                    <button onclick="gerarPDFCompras()" class="flex-1 sm:flex-none bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm shadow-md transition-all flex items-center justify-center gap-2">
                         <i class="fa-solid fa-file-pdf"></i> Gerar PDF da Lista
                     </button>
                 </div>
+            </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Sugestões Automáticas -->
-                    <div class="lg:col-span-1 space-y-4">
-                        <h3 class="font-bold text-slate-700 text-sm flex items-center gap-2">
-                            <i class="fa-solid fa-lightbulb text-amber-500"></i> Sugestões do Estoque
-                        </h3>
-                        <div id="container-sugestoes" class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+            <!-- Sugestões Automáticas -->
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5">
+                <h3 class="text-sm font-bold text-amber-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-600"></i> Sugestões Automáticas (Zerados ou Próximos de Acabar)
+                </h3>
+                <div id="sugestoes-compras-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    <!-- Preenchido via JS -->
+                </div>
+            </div>
+
+            <!-- Itens Atuais na Lista de Pedido -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="p-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide">Itens Selecionados para Pedido de Compra</h3>
+                    <button onclick="limparListaCompras()" class="text-xs text-red-600 hover:underline font-semibold">Limpar Lista</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-100 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                <th class="py-3 px-4">Produto / Marca</th>
+                                <th class="py-3 px-4 text-center">Estoque Atual</th>
+                                <th class="py-3 px-4 text-center">Qtd Desejada para Pedido</th>
+                                <th class="py-3 px-4 text-right">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="compras-table-body" class="divide-y divide-slate-100 text-sm">
                             <!-- Preenchido via JS -->
-                        </div>
-                    </div>
-
-                    <!-- Lista de Pedidos Ativa -->
-                    <div class="lg:col-span-2 bg-slate-50 p-5 rounded-2xl border border-slate-200 space-y-4">
-                        <div class="flex justify-between items-center">
-                            <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-                                <i class="fa-solid fa-cart-flatbed text-brand-600"></i> Itens Adicionados ao Pedido
-                            </h3>
-                            <button onclick="adicionarItemManualCompra()" class="text-xs bg-brand-600 hover:bg-brand-700 text-white font-medium px-3 py-1.5 rounded-lg transition">
-                                + Adicionar Item Manual
-                            </button>
-                        </div>
-
-                        <div class="overflow-x-auto bg-white rounded-xl border border-slate-200">
-                            <table class="w-full text-left border-collapse">
-                                <thead>
-                                    <tr class="bg-slate-100 text-xs font-semibold uppercase tracking-wider text-slate-600">
-                                        <th class="p-3">Produto / Marca</th>
-                                        <th class="p-3 w-28">Qtd Pedida</th>
-                                        <th class="p-3">Estoque Atual</th>
-                                        <th class="p-3 text-right">Remover</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabela-pedido-body" class="divide-y divide-slate-100 text-sm">
-                                    <!-- Preenchido via JS -->
-                                </tbody>
-                            </table>
-                        </div>
-                        <div id="empty-pedido" class="text-center py-8 text-slate-400 text-sm">
-                            Nenhum item adicionado à lista de pedido ainda. Clique em "Adicionar à Lista" nas sugestões ao lado.
-                        </div>
-                    </div>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </section>
 
     </main>
 
-    <!-- Footer -->
-    <footer class="bg-white border-t border-slate-200 mt-12 py-6 text-center text-xs text-slate-500">
-        <p>Universo Eletro Hidráulica &copy; 2026 - Todos os direitos reservados. Sincronização em tempo real via Supabase.</p>
-    </footer>
+    <!-- MODAL DE CADASTRO / EDIÇÃO DE PRODUTO -->
+    <div id="product-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 sm:p-8 space-y-6 my-auto">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-4">
+                <h3 id="modal-product-title" class="text-lg font-bold text-slate-800">Cadastrar Novo Produto</h3>
+                <button onclick="closeProductModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold p-1">&times;</button>
+            </div>
+            <form id="form-produto" onsubmit="salvarProduto(event)" class="space-y-4">
+                <input type="hidden" id="prod-id">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nome do Produto *</label>
+                    <input type="text" id="prod-nome" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Marca *</label>
+                        <input type="text" id="prod-marca" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Preço de Venda (R$) *</label>
+                        <input type="number" step="0.01" id="prod-preco" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Quantidade Inicial *</label>
+                        <input type="number" id="prod-qtd" min="0" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Foto (URL ou Câmera)</label>
+                        <input type="text" id="prod-foto" placeholder="https://exemplo.com/foto.jpg" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                    <button type="button" onclick="closeProductModal()" class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50">Cancelar</button>
+                    <button type="submit" class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow">Salvar Produto</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-    <!-- Application Script -->
+    <!-- MODAL NOVO VENDEDOR -->
+    <div id="vendedor-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-800">Adicionar Novo Vendedor</h3>
+                <button onclick="closeVendedorModal()" class="text-slate-400 hover:text-slate-600 font-bold">&times;</button>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nome do Vendedor</label>
+                <input type="text" id="novo-vendedor-nome" placeholder="Ex: Carlos Silva" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="closeVendedorModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold">Cancelar</button>
+                <button type="button" onclick="salvarNovoVendedor()" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold">Adicionar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ADICIONAR ITEM MANUALMENTE NA COMPRA -->
+    <div id="custom-item-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-800">Novo Item para Lista de Compra</h3>
+                <button onclick="closeCustomItemModal()" class="text-slate-400 hover:text-slate-600 font-bold">&times;</button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nome do Produto / Material</label>
+                    <input type="text" id="custom-item-nome" placeholder="Ex: Disjuntor 40A" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Marca</label>
+                    <input type="text" id="custom-item-marca" placeholder="Ex: Siemens" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Quantidade Desejada</label>
+                    <input type="number" id="custom-item-qtd" value="5" min="1" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button type="button" onclick="closeCustomItemModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold">Cancelar</button>
+                <button type="button" onclick="adicionarItemManualCompra()" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold">Adicionar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDITAR SAÍDA -->
+    <div id="edit-saida-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-base font-bold text-slate-800">Corrigir / Editar Dados da Saída</h3>
+                <button onclick="closeEditSaidaModal()" class="text-slate-400 hover:text-slate-600 font-bold">&times;</button>
+            </div>
+            <form id="form-edit-saida" onsubmit="salvarEdicaoSaida(event)" class="space-y-4">
+                <input type="hidden" id="edit-saida-id">
+                <input type="hidden" id="edit-saida-prod-id">
+                <input type="hidden" id="edit-saida-old-qtd">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Produto</label>
+                    <input type="text" id="edit-saida-prod-nome" disabled class="w-full p-3 bg-slate-100 border border-slate-200 rounded-xl text-sm font-medium text-slate-600">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Quantidade</label>
+                        <input type="number" id="edit-saida-qtd" min="1" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Valor Total (R$)</label>
+                        <input type="number" step="0.01" id="edit-saida-total" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-emerald-700">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Vendedor</label>
+                    <select id="edit-saida-vendedor" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
+                        <!-- Preenchido via JS -->
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button type="button" onclick="closeEditSaidaModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold">Salvar Correção</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Notification Box (Instead of alert) -->
+    <div id="custom-alert" class="fixed bottom-4 right-4 z-50 transform translate-y-20 opacity-0 transition-all duration-300 max-w-sm w-full bg-slate-900 text-white px-5 py-4 rounded-2xl shadow-2xl flex items-center justify-between gap-3 border border-slate-700">
+        <div class="flex items-center gap-3">
+            <i id="alert-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+            <span id="alert-msg" class="text-sm font-medium">Operação realizada com sucesso!</span>
+        </div>
+        <button onclick="hideAlert()" class="text-slate-400 hover:text-white font-bold">&times;</button>
+    </div>
+
+    <!-- Supabase Integration Script -->
     <script>
-        // --- SUPABASE CONFIGURATION ---
+        // Supabase configuration details provided
         const SUPABASE_URL = 'https://wwuivpaeldpigajmqclg.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3dWl2cGFlbGRwaWdham1xY2xnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3OTc3MTgsImV4cCI6MjEwODM3MzcxOH0.BBCGPPfXhknNulycPZyOu--A2XKzgo-Tpx3qGfKp0DEC';
-        
-        let supabaseClient = null;
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3dWl2cGFlbGRwaWdham1xY2xnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3OTc3MTgsImV4cCI6MjEwODM3MzcxOH0.BBCGPPfXhknNulycPZyOu--A2XKzgo-Tpx3qGfKp0DE';
 
-        // State variables
-        let produtos = [];
-        let saidas = [];
-        let listaPedido = []; 
-        let vendedoresList = ['Douglas', 'Gleydson', 'Nicolas', 'Alexandre'];
+        let supabaseClient = null;
+        let produtosState = [];
+        let saidasState = [];
+        let vendedoresState = ['Douglas', 'Gleydson', 'Nicolas', 'Alexandre'];
+        let comprasListaState = []; // [{id, nome, marca, qtdEstoque, qtdPedido, custom}]
+        let filtroPeriodoAtual = 'diario';
 
         // Initialize Supabase & App
         window.addEventListener('DOMContentLoaded', async () => {
-            initSupabaseClient();
-            setupDefaultDatetime();
-            await loadAllDataFromSupabase();
-        });
-
-        function initSupabaseClient() {
             try {
-                if (window.supabase) {
+                if (typeof window.supabase !== 'undefined') {
                     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                     updateSyncStatus('online', 'Conectado ao Supabase');
+                    await carregarDadosSupabase();
                 } else {
-                    updateSyncStatus('offline', 'Erro ao carregar SDK Supabase');
+                    updateSyncStatus('error', 'Biblioteca Supabase indisponível. Usando memória local.');
+                    carregarDadosMock();
                 }
-            } catch (err) {
-                console.error("Erro init Supabase:", err);
-                updateSyncStatus('offline', 'Modo offline / Erro conexão');
+            } catch (e) {
+                console.error("Erro ao conectar no Supabase:", e);
+                updateSyncStatus('error', 'Erro na conexão. Modo local ativado.');
+                carregarDadosMock();
             }
-        }
+
+            // Inicializar data/hora atual na tela de saída
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('saida-data').value = now.toISOString().slice(0,16);
+
+            renderVendedoresSelect();
+            renderAll();
+        });
 
         function updateSyncStatus(status, text) {
             const dot = document.getElementById('sync-dot');
             const txt = document.getElementById('sync-text');
-            if (!dot || !txt) return;
             txt.innerText = text;
             if (status === 'online') {
-                dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500";
+                dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
             } else {
-                dot.className = "w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse";
+                dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
             }
         }
 
-        function setupDefaultDatetime() {
-            const now = new Date();
-            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-            const dtString = now.toISOString().slice(0, 16);
-            const el = document.getElementById('saida-data');
-            if (el) el.value = dtString;
+        function showAlert(msg, type = 'success') {
+            const alertBox = document.getElementById('custom-alert');
+            const alertMsg = document.getElementById('alert-msg');
+            const alertIcon = document.getElementById('alert-icon');
+            
+            alertMsg.innerText = msg;
+            alertIcon.className = type === 'success' ? 'fa-solid fa-circle-check text-emerald-400 text-lg' : 'fa-solid fa-triangle-exclamation text-amber-400 text-lg';
+            
+            alertBox.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                hideAlert();
+            }, 4000);
         }
 
-        // --- DATA FETCHING (SUPABASE) ---
-        async function loadAllDataFromSupabase() {
-            if (!supabaseClient) return;
-            try {
-                const { data: prodData, error: prodErr } = await supabaseClient
-                    .from('produtos')
-                    .select('*');
-                if (prodErr) throw prodErr;
-                produtos = prodData || [];
-
-                const { data: saidaData, error: saidaErr } = await supabaseClient
-                    .from('saidas')
-                    .select('*');
-                if (saidaErr) throw saidaErr;
-                saidas = saidaData || [];
-
-                refreshUI();
-            } catch (err) {
-                console.error("Erro ao carregar do Supabase:", err);
-                showToast("Erro ao carregar dados do Supabase. Verifique a conexão.", "error");
-            }
+        function hideAlert() {
+            const alertBox = document.getElementById('custom-alert');
+            alertBox.classList.add('translate-y-20', 'opacity-0');
         }
 
-        async function refreshAllData() {
-            showToast("Atualizando dados...", "info");
-            await loadAllDataFromSupabase();
-            showToast("Dados atualizados com sucesso!", "success");
-        }
-
-        // --- NAVIGATION ---
+        // Tab Navigation Switcher
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => {
-                el.classList.remove('bg-brand-600', 'text-white', 'shadow');
-                el.classList.add('text-brand-100', 'hover:bg-brand-700');
+                el.classList.remove('bg-blue-600', 'text-white', 'shadow');
+                el.classList.add('text-blue-200');
             });
 
-            document.getElementById(`tab-${tabId}`).classList.add('active');
-            const activeBtn = document.getElementById(`btn-tab-${tabId}`);
-            activeBtn.classList.remove('text-brand-100', 'hover:bg-brand-700');
-            activeBtn.classList.add('bg-brand-600', 'text-white', 'shadow');
+            document.getElementById('tab-' + tabId).classList.add('active');
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow');
+            activeBtn.classList.remove('text-blue-200');
 
-            if (tabId === 'estoque') renderEstoque();
-            if (tabId === 'entrada') populateEntradaSelect();
-            if (tabId === 'saida') populateSaidaSelect();
-            if (tabId === 'acompanhamento') renderAcompanhamento();
-            if (tabId === 'compras') renderListaCompras();
+            if (tabId === 'compras') {
+                atualizarSugestoesCompras();
+            }
         }
 
-        function refreshUI() {
-            renderEstoque();
-            populateEntradaSelect();
-            populateSaidaSelect();
-            renderAcompanhamento();
-            renderListaCompras();
+        // Carregar Dados do Supabase
+        async function carregarDadosSupabase() {
+            if (!supabaseClient) return;
+
+            // Carregar Produtos
+            const { data: prodData, error: prodErr } = await supabaseClient.from('produtos').select('*');
+            if (!prodErr && prodData) {
+                produtosState = prodData;
+            } else if (prodErr) {
+                console.log("Tabela produtos pode não existir ainda, criando estrutura vazia ou mock.");
+            }
+
+            // Carregar Saídas
+            const { data: saidaData, error: saidaErr } = await supabaseClient.from('saidas').select('*');
+            if (!saidaErr && saidaData) {
+                saidasState = saidaData;
+            }
+
+            // Carregar Vendedores
+            const { data: vendData, error: vendErr } = await supabaseClient.from('vendedores').select('*');
+            if (!vendErr && vendData && vendData.length > 0) {
+                vendedoresState = vendData.map(v => v.nome);
+            }
         }
 
-        // --- TAB 1: ESTOQUE ---
-        function renderEstoque() {
-            const grid = document.getElementById('grid-estoque');
-            const empty = document.getElementById('empty-estoque');
-            const search = document.getElementById('search-estoque').value.toLowerCase();
+        function carregarDadosMock() {
+            produtosState = [
+                { id: '1', nome: 'Disjuntor Monofásico 30A', marca: 'Schneider', quantidade: 2, preco: 45.00, foto: 'https://placehold.co/100x100/e2e8f0/1e293b?text=Disjuntor' },
+                { id: '2', nome: 'Cabo Flexível 2.5mm (100m)', marca: 'Prysmian', quantidade: 0, preco: 180.00, foto: 'https://placehold.co/100x100/e2e8f0/1e293b?text=Cabo' },
+                { id: '3', nome: 'Registro de Esfera 3/4"', marca: 'Deca', quantidade: 5, preco: 32.50, foto: 'https://placehold.co/100x100/e2e8f0/1e293b?text=Registro' },
+                { id: '4', nome: 'Tomada Dupla 10A', marca: 'Alumbra', quantidade: 12, preco: 14.90, foto: 'https://placehold.co/100x100/e2e8f0/1e293b?text=Tomada' }
+            ];
+            saidasState = [
+                { id: 's1', produto_id: '1', produto_nome: 'Disjuntor Monofásico 30A', quantidade: 1, tipo: 'Venda', vendedor: 'Douglas', data: new Date().toISOString(), valor_total: 45.00 }
+            ];
+        }
 
-            const disponiveis = produtos.filter(p => p.quantidade > 0 && 
-                (p.nome.toLowerCase().includes(search) || p.marca.toLowerCase().includes(search))
+        function renderAll() {
+            renderEntradaList();
+            renderEstoqueList();
+            renderSaidaSelect();
+            renderVendedoresSelect();
+            renderAcompanhamentoList();
+            atualizarSugestoesCompras();
+            renderComprasLista();
+        }
+
+        // --- 1. ENTRADA E CADASTRO ---
+        function renderEntradaList() {
+            const tbody = document.getElementById('produtos-table-body');
+            const query = (document.getElementById('search-entrada')?.value || '').toLowerCase();
+            tbody.innerHTML = '';
+
+            const filtered = produtosState.filter(p => 
+                (p.nome && p.nome.toLowerCase().includes(query)) || 
+                (p.marca && p.marca.toLowerCase().includes(query))
             );
 
-            const totalItens = produtos.reduce((acc, p) => acc + (p.quantidade > 0 ? 1 : 0), 0);
-            const baixoEstoqueCount = produtos.filter(p => p.quantidade > 0 && p.quantidade <= 3).length;
-            const valorTotalEstoque = produtos.reduce((acc, p) => acc + (p.quantidade * (p.preco || 0)), 0);
-
-            document.getElementById('stat-total-itens').innerText = totalItens;
-            document.getElementById('stat-baixo-estoque').innerText = baixoEstoqueCount;
-            document.getElementById('stat-valor-total').innerText = `R$ ${valorTotalEstoque.toFixed(2).replace('.', ',')}`;
-
-            if (disponiveis.length === 0) {
-                grid.innerHTML = '';
-                empty.classList.remove('hidden');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Nenhum produto encontrado.</td></tr>`;
                 return;
             }
 
-            empty.classList.add('hidden');
-            grid.innerHTML = disponiveis.map(p => {
-                const isBaixo = p.quantidade <= 3;
-                const fotoUrl = p.foto || 'https://placehold.co/300x200/e2e8f0/64748b?text=Sem+Foto';
-                return `
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between hover:shadow-md transition">
-                        <div>
-                            <div class="relative h-44 bg-slate-100 overflow-hidden">
-                                <img src="${fotoUrl}" alt="${p.nome}" class="w-full h-full object-cover" onerror="this.src='https://placehold.co/300x200/e2e8f0/64748b?text=Erro+Foto'">
-                                ${isBaixo ? `<span class="absolute top-3 right-3 bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> Próximo de acabar</span>` : ''}
-                                <span class="absolute bottom-3 left-3 bg-slate-900/70 backdrop-blur text-white text-xs font-medium px-2.5 py-1 rounded-lg">${p.marca}</span>
-                            </div>
-                            <div class="p-4 space-y-2">
-                                <h3 class="font-bold text-slate-800 text-base line-clamp-1">${p.nome}</h3>
-                                <p class="text-emerald-600 font-bold text-lg">R$ ${(p.preco || 0).toFixed(2).replace('.', ',')}</p>
-                            </div>
-                        </div>
-                        <div class="p-4 pt-0 border-t border-slate-100 mt-2 flex flex-col gap-3">
-                            <div class="flex items-center justify-between mt-3">
-                                <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Estoque:</span>
-                                <div class="flex items-center gap-2">
-                                    <button onclick="ajustarEstoqueRapido('${p.id}', -1)" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 flex items-center justify-center transition font-bold"><i class="fa-solid fa-minus"></i></button>
-                                    <span class="font-bold text-slate-800 text-base w-8 text-center">${p.quantidade}</span>
-                                    <button onclick="ajustarEstoqueRapido('${p.id}', 1)" class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 flex items-center justify-center transition font-bold"><i class="fa-solid fa-plus"></i></button>
-                                </div>
-                            </div>
-                            <div class="flex gap-2">
-                                <button onclick="editarProduto('${p.id}')" class="flex-grow bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2 px-3 rounded-xl text-xs transition flex items-center justify-center gap-1.5">
-                                    <i class="fa-solid fa-pen-to-square"></i> Editar
-                                </button>
-                                <button onclick="excluirProduto('${p.id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 font-medium py-2 px-3 rounded-xl text-xs transition flex items-center justify-center">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        async function ajustarEstoqueRapido(id, delta) {
-            const prod = produtos.find(p => p.id === id);
-            if (!prod) return;
-            const novaQtd = prod.quantidade + delta;
-            if (novaQtd < 0) {
-                showToast("A quantidade em estoque não pode ser menor que zero.", "error");
-                return;
-            }
-
-            try {
-                const { error } = await supabaseClient
-                    .from('produtos')
-                    .update({ quantidade: novaQtd })
-                    .eq('id', id);
-
-                if (error) throw error;
-                prod.quantidade = novaQtd;
-                renderEstoque();
-                renderListaCompras();
-                showToast(`Estoque atualizado para ${novaQtd} un.`, "success");
-            } catch (err) {
-                console.error("Erro ao atualizar estoque:", err);
-                showToast("Erro ao atualizar estoque no Supabase.", "error");
-            }
-        }
-
-        // --- TAB 2: ENTRADA / CADASTRO ---
-        function populateEntradaSelect() {
-            const select = document.getElementById('entrada-existente');
-            select.innerHTML = '<option value="">-- Cadastrar Novo Produto --</option>' + 
-                produtos.map(p => `<option value="${p.id}">${p.nome} (${p.marca}) - Estoque atual: ${p.quantidade}</option>`).join('');
-        }
-
-        function preencherDadosExistentes(id) {
-            if (!id) {
-                resetFormEntrada();
-                return;
-            }
-            const prod = produtos.find(p => p.id === id);
-            if (!prod) return;
-
-            document.getElementById('edit-prod-id').value = prod.id;
-            document.getElementById('prod-nome').value = prod.nome;
-            document.getElementById('prod-marca').value = prod.marca;
-            document.getElementById('prod-preco').value = prod.preco;
-            document.getElementById('prod-qtd').value = '';
-            document.getElementById('prod-qtd').placeholder = `Qtd a adicionar (Estoque atual: ${prod.quantidade})`;
-            document.getElementById('prod-foto-url').value = prod.foto || '';
-            updateImageUrlPreview(prod.foto || '');
-            document.getElementById('btn-salvar-produto').innerHTML = `<i class="fa-solid fa-plus"></i> Adicionar Estoque ao Item`;
-        }
-
-        function resetFormEntrada() {
-            document.getElementById('form-entrada').reset();
-            document.getElementById('edit-prod-id').value = '';
-            document.getElementById('preview-img').classList.add('hidden');
-            document.getElementById('preview-icon').classList.remove('hidden');
-            document.getElementById('prod-qtd').placeholder = 'Ex: 15';
-            document.getElementById('btn-salvar-produto').innerHTML = `<i class="fa-solid fa-check"></i> Salvar no Estoque`;
-            document.getElementById('entrada-existente').value = '';
-        }
-
-        function handleImageUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const base64 = e.target.result;
-                document.getElementById('prod-foto-url').value = base64;
-                updateImageUrlPreview(base64);
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function updateImageUrlPreview(url) {
-            const img = document.getElementById('preview-img');
-            const icon = document.getElementById('preview-icon');
-            if (url && url.trim() !== '') {
-                img.src = url;
-                img.classList.remove('hidden');
-                icon.classList.add('hidden');
-            } else {
-                img.classList.add('hidden');
-                icon.classList.remove('hidden');
-            }
-        }
-
-        async function handleEntradaSubmit(e) {
-            e.preventDefault();
-            const editId = document.getElementById('edit-prod-id').value;
-            const nome = document.getElementById('prod-nome').value.trim();
-            const marca = document.getElementById('prod-marca').value.trim();
-            const qtdInput = parseInt(document.getElementById('prod-qtd').value) || 0;
-            const preco = parseFloat(document.getElementById('prod-preco').value) || 0;
-            const foto = document.getElementById('prod-foto-url').value.trim();
-
-            if (!supabaseClient) {
-                showToast("Erro: Supabase não conectado.", "error");
-                return;
-            }
-
-            try {
-                if (editId) {
-                    const prod = produtos.find(p => p.id === editId);
-                    const isRepozicao = document.getElementById('entrada-existente').value !== '';
-                    const novaQtd = isRepozicao ? (prod.quantidade + qtdInput) : qtdInput;
-
-                    const { error } = await supabaseClient
-                        .from('produtos')
-                        .update({ nome, marca, quantidade: novaQtd, preco, foto })
-                        .eq('id', editId);
-
-                    if (error) throw error;
-                    showToast("Produto atualizado com sucesso!", "success");
+            filtered.forEach(p => {
+                let statusTag = '';
+                let qtd = Number(p.quantidade);
+                if (qtd === 0) {
+                    statusTag = `<span class="px-2.5 py-1 bg-red-100 text-red-700 font-semibold text-xs rounded-full">Zerado</span>`;
+                } else if (qtd <= 3) {
+                    statusTag = `<span class="px-2.5 py-1 bg-amber-100 text-amber-800 font-semibold text-xs rounded-full">Próximo de Acabar</span>`;
                 } else {
-                    const novoProd = {
-                        nome,
-                        marca,
-                        quantidade: qtdInput,
-                        preco,
-                        foto: foto || 'https://placehold.co/300x200/e2e8f0/64748b?text=Sem+Foto'
-                    };
-
-                    const { data, error } = await supabaseClient
-                        .from('produtos')
-                        .insert([novoProd])
-                        .select();
-
-                    if (error) throw error;
-                    showToast("Produto cadastrado com sucesso!", "success");
+                    statusTag = `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-semibold text-xs rounded-full">Normal</span>`;
                 }
 
-                resetFormEntrada();
-                await loadAllDataFromSupabase();
-                switchTab('estoque');
-            } catch (err) {
-                console.error("Erro ao salvar produto:", err);
-                showToast("Erro ao salvar produto no Supabase.", "error");
+                const fotoUrl = p.foto && p.foto.trim() !== '' ? p.foto : `https://placehold.co/80x80/e2e8f0/1e293b?text=Foto`;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition-colors border-b border-slate-100";
+                tr.innerHTML = `
+                    <td class="py-3 px-4">
+                        <img src="${fotoUrl}" alt="${p.nome}" onerror="this.src='https://placehold.co/80x80/e2e8f0/1e293b?text=Erro'" class="w-12 h-12 rounded-xl object-cover border border-slate-200">
+                    </td>
+                    <td class="py-3 px-4">
+                        <div class="font-semibold text-slate-800">${p.nome}</div>
+                        <div class="text-xs text-slate-500">${p.marca}</div>
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <div class="inline-flex items-center gap-2 bg-slate-100 px-3 py-1 rounded-xl">
+                            <button onclick="ajustarEstoqueRapido('${p.id}', -1)" class="w-6 h-6 bg-white rounded-lg shadow-sm font-bold text-slate-600 hover:bg-red-50 hover:text-red-600 transition">-</button>
+                            <span class="font-bold w-6 text-center">${p.quantidade}</span>
+                            <button onclick="ajustarEstoqueRapido('${p.id}', 1)" class="w-6 h-6 bg-white rounded-lg shadow-sm font-bold text-slate-600 hover:bg-emerald-50 hover:text-emerald-600 transition">+</button>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 text-right font-semibold text-slate-700">R$ ${Number(p.preco).toFixed(2)}</td>
+                    <td class="py-3 px-4 text-center">${statusTag}</td>
+                    <td class="py-3 px-4 text-right">
+                        <button onclick="editarProduto('${p.id}')" class="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition mr-1" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openProductModal(id = null) {
+            document.getElementById('product-modal').classList.remove('hidden');
+            if (id) {
+                document.getElementById('modal-product-title').innerText = 'Editar Produto';
+                const prod = produtosState.find(p => p.id === id);
+                if (prod) {
+                    document.getElementById('prod-id').value = prod.id;
+                    document.getElementById('prod-nome').value = prod.nome;
+                    document.getElementById('prod-marca').value = prod.marca;
+                    document.getElementById('prod-preco').value = prod.preco;
+                    document.getElementById('prod-qtd').value = prod.quantidade;
+                    document.getElementById('prod-foto').value = prod.foto || '';
+                }
+            } else {
+                document.getElementById('modal-product-title').innerText = 'Cadastrar Novo Produto';
+                document.getElementById('form-produto').reset();
+                document.getElementById('prod-id').value = '';
             }
+        }
+
+        function closeProductModal() {
+            document.getElementById('product-modal').classList.add('hidden');
+        }
+
+        async function salvarProduto(e) {
+            e.preventDefault();
+            const id = document.getElementById('prod-id').value;
+            const produtoObj = {
+                nome: document.getElementById('prod-nome').value,
+                marca: document.getElementById('prod-marca').value,
+                preco: parseFloat(document.getElementById('prod-preco').value),
+                quantidade: parseInt(document.getElementById('prod-qtd').value),
+                foto: document.getElementById('prod-foto').value
+            };
+
+            if (id) {
+                // Editar existente
+                const index = produtosState.findIndex(p => p.id === id);
+                if (index !== -1) {
+                    produtosState[index] = { ...produtosState[index], ...produtoObj };
+                }
+                if (supabaseClient) {
+                    await supabaseClient.from('produtos').update(produtoObj).eq('id', id);
+                }
+                showAlert("Produto atualizado com sucesso!");
+            } else {
+                // Novo produto
+                const novoId = 'p_' + Date.now();
+                const novoProd = { id: novoId, ...produtoObj };
+                produtosState.push(novoProd);
+                if (supabaseClient) {
+                    await supabaseClient.from('produtos').insert([novoProd]);
+                }
+                showAlert("Produto cadastrado com sucesso!");
+            }
+
+            closeProductModal();
+            renderAll();
         }
 
         function editarProduto(id) {
-            const prod = produtos.find(p => p.id === id);
-            if (!prod) return;
-            switchTab('entrada');
-            document.getElementById('edit-prod-id').value = prod.id;
-            document.getElementById('prod-nome').value = prod.nome;
-            document.getElementById('prod-marca').value = prod.marca;
-            document.getElementById('prod-qtd').value = prod.quantidade;
-            document.getElementById('prod-preco').value = prod.preco;
-            document.getElementById('prod-foto-url').value = prod.foto || '';
-            updateImageUrlPreview(prod.foto || '');
-            document.getElementById('btn-salvar-produto').innerHTML = `<i class="fa-solid fa-save"></i> Atualizar Dados do Produto`;
+            openProductModal(id);
         }
 
-        async function excluirProduto(id) {
-            showConfirmModal("Excluir Produto", "Tem certeza que deseja excluir este produto do estoque?", async () => {
-                try {
-                    const { error } = await supabaseClient.from('produtos').delete().eq('id', id);
-                    if (error) throw error;
-                    await loadAllDataFromSupabase();
-                    showToast("Produto excluído com sucesso.", "success");
-                } catch (err) {
-                    console.error("Erro ao excluir:", err);
-                    showToast("Erro ao excluir produto.", "error");
-                }
+        async function ajustarEstoqueRapido(id, delta) {
+            const prod = produtosState.find(p => p.id === id);
+            if (!prod) return;
+            let novaQtd = Number(prod.quantidade) + delta;
+            if (novaQtd < 0) novaQtd = 0;
+            prod.quantidade = novaQtd;
+
+            if (supabaseClient) {
+                await supabaseClient.from('produtos').update({ quantidade: novaQtd }).eq('id', id);
+            }
+            renderAll();
+        }
+
+        // --- 2. ESTOQUE DISPONÍVEL ---
+        function renderEstoqueList() {
+            const grid = document.getElementById('estoque-grid');
+            const query = (document.getElementById('search-estoque')?.value || '').toLowerCase();
+            grid.innerHTML = '';
+
+            // Retira da lista os produtos zerados
+            const disponiveis = produtosState.filter(p => Number(p.quantidade) > 0 && 
+                (p.nome.toLowerCase().includes(query) || p.marca.toLowerCase().includes(query))
+            );
+
+            if (disponiveis.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400 bg-white rounded-2xl border border-slate-100">Nenhum produto disponível no estoque (estoque zerado ou filtrado).</div>`;
+                return;
+            }
+
+            disponiveis.forEach(p => {
+                const fotoUrl = p.foto && p.foto.trim() !== '' ? p.foto : `https://placehold.co/200x150/e2e8f0/1e293b?text=Produto`;
+                const isWarning = Number(p.quantidade) <= 3;
+
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow";
+                card.innerHTML = `
+                    <div>
+                        <div class="relative h-36 bg-slate-100 overflow-hidden">
+                            <img src="${fotoUrl}" alt="${p.nome}" onerror="this.src='https://placehold.co/200x150/e2e8f0/1e293b?text=Indisponível'" class="w-full h-full object-cover">
+                            ${isWarning ? '<span class="absolute top-2 right-2 bg-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow">Baixo Estoque</span>' : ''}
+                        </div>
+                        <div class="p-4">
+                            <span class="text-xs text-slate-500 font-medium">${p.marca}</span>
+                            <h3 class="font-bold text-slate-800 text-base leading-snug mt-0.5">${p.nome}</h3>
+                            <div class="text-emerald-700 font-extrabold text-lg mt-2">R$ ${Number(p.preco).toFixed(2)}</div>
+                        </div>
+                    </div>
+                    <div class="p-4 pt-0 flex items-center justify-between border-t border-slate-50 mt-2">
+                        <span class="text-xs font-semibold text-slate-600">Qtd: <strong class="text-slate-900 text-sm">${p.quantidade} un</strong></span>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="ajustarEstoqueRapido('${p.id}', -1)" class="w-8 h-8 bg-slate-100 hover:bg-red-100 hover:text-red-700 rounded-xl font-bold flex items-center justify-center transition">-</button>
+                            <button onclick="ajustarEstoqueRapido('${p.id}', 1)" class="w-8 h-8 bg-slate-100 hover:bg-emerald-100 hover:text-emerald-700 rounded-xl font-bold flex items-center justify-center transition">+</button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
             });
         }
 
-        // --- TAB 3: SAÍDA ---
-        function populateSaidaSelect() {
+        // --- 3. SAÍDA DE PRODUTOS ---
+        function renderSaidaSelect() {
             const select = document.getElementById('saida-produto-id');
-            const disponiveis = produtos.filter(p => p.quantidade > 0);
-            select.innerHTML = '<option value="">-- Escolha um produto disponível --</option>' + 
-                disponiveis.map(p => `<option value="${p.id}">${p.nome} (${p.marca}) - Estoque: ${p.quantidade} - R$ ${p.preco.toFixed(2)}</option>`).join('');
+            select.innerHTML = '<option value="">-- Escolha um produto disponível --</option>';
+            
+            produtosState.filter(p => Number(p.quantidade) > 0).forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.setAttribute('data-preco', p.preco);
+                opt.setAttribute('data-qtd', p.quantidade);
+                opt.innerText = `${p.nome} (${p.marca}) - Estoque: ${p.quantidade}`;
+                select.appendChild(opt);
+            });
         }
 
-        function onSaidaProductChange() {
-            const id = document.getElementById('saida-produto-id').value;
-            const info = document.getElementById('saida-estoque-info');
-            if (!id) {
-                info.innerText = '';
-                document.getElementById('saida-valor-unit').value = '';
-                document.getElementById('saida-valor-total').value = '';
-                return;
-            }
-            const prod = produtos.find(p => p.id === id);
-            if (prod) {
-                info.innerText = `Estoque disponível: ${prod.quantidade} unidades. Preço sugerido: R$ ${prod.preco.toFixed(2)}`;
-                document.getElementById('saida-valor-unit').value = prod.preco;
-                document.getElementById('saida-qtd').value = 1;
+        function renderVendedoresSelect() {
+            const selects = [document.getElementById('saida-vendedor'), document.getElementById('edit-saida-vendedor')];
+            selects.forEach(select => {
+                if (!select) return;
+                const currentVal = select.value;
+                select.innerHTML = '';
+                vendedoresState.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v;
+                    opt.innerText = v;
+                    select.appendChild(opt);
+                });
+                if (currentVal) select.value = currentVal;
+            });
+        }
+
+        function onSelectSaidaProduto() {
+            const select = document.getElementById('saida-produto-id');
+            const selectedOpt = select.options[select.selectedIndex];
+            if (selectedOpt && selectedOpt.value) {
+                const preco = selectedOpt.getAttribute('data-preco');
+                document.getElementById('saida-preco-unit').value = preco;
                 calcularTotalSaida();
             }
         }
 
         function calcularTotalSaida() {
-            const qtd = parseFloat(document.getElementById('saida-qtd').value) || 0;
-            const unit = parseFloat(document.getElementById('saida-valor-unit').value) || 0;
-            document.getElementById('saida-valor-total').value = (qtd * unit).toFixed(2);
+            const qtd = parseFloat(document.getElementById('saida-quantidade').value) || 0;
+            const precoUnit = parseFloat(document.getElementById('saida-preco-unit').value) || 0;
+            document.getElementById('saida-valor-total').value = (qtd * precoUnit).toFixed(2);
         }
 
-        function checkNovoVendedor(val) {
-            const div = document.getElementById('div-novo-vendedor');
-            if (val === 'OUTRO') {
-                div.classList.remove('hidden');
-            } else {
-                div.classList.add('hidden');
-            }
-        }
-
-        function salvarNovoVendedor() {
-            const novo = document.getElementById('input-novo-vendedor').value.trim();
-            if (!novo) {
-                showToast("Digite o nome do vendedor.", "error");
-                return;
-            }
-            if (!vendedoresList.includes(novo)) {
-                vendedoresList.push(novo);
-            }
-            const select = document.getElementById('saida-vendedor');
-            const outroOpt = select.querySelector('option[value="OUTRO"]');
-            const opt = document.createElement('option');
-            opt.value = novo;
-            opt.innerText = novo;
-            select.insertBefore(opt, outroOpt);
-            select.value = novo;
-            document.getElementById('div-novo-vendedor').classList.add('hidden');
-            document.getElementById('input-novo-vendedor').value = '';
-            showToast(`Vendedor ${novo} adicionado com sucesso!`, "success");
-        }
-
-        async function handleSaidaSubmit(e) {
+        async function submitSaida(e) {
             e.preventDefault();
             const prodId = document.getElementById('saida-produto-id').value;
-            const tipo = document.getElementById('saida-tipo').value;
-            const qtd = parseInt(document.getElementById('saida-qtd').value) || 0;
-            const valorUnit = parseFloat(document.getElementById('saida-valor-unit').value) || 0;
-            const valorTotal = parseFloat(document.getElementById('saida-valor-total').value) || 0;
-            let vendedor = document.getElementById('saida-vendedor').value;
-            const dataHora = document.getElementById('saida-data').value;
-
-            if (vendedor === 'OUTRO') {
-                showToast("Selecione ou adicione um vendedor válido.", "error");
-                return;
-            }
-
-            const prod = produtos.find(p => p.id === prodId);
+            const prod = produtosState.find(p => p.id === prodId);
             if (!prod) {
-                showToast("Produto não encontrado.", "error");
+                showAlert("Selecione um produto válido.", "error");
                 return;
             }
 
-            if (qtd > prod.quantidade) {
-                showToast(`Quantidade solicitada (${qtd}) maior que o estoque disponível (${prod.quantidade}).`, "error");
+            const qtdSaida = parseInt(document.getElementById('saida-quantidade').value);
+            if (qtdSaida > Number(prod.quantidade)) {
+                showAlert(`Quantidade indisponível no estoque! Estoque atual: ${prod.quantidade}`, "error");
                 return;
             }
 
-            try {
-                const novaQtd = prod.quantidade - qtd;
-                const { error: errProd } = await supabaseClient
-                    .from('produtos')
-                    .update({ quantidade: novaQtd })
-                    .eq('id', prodId);
-                if (errProd) throw errProd;
+            const tipo = document.getElementById('saida-tipo').value;
+            const vendedor = document.getElementById('saida-vendedor').value;
+            const dataHora = document.getElementById('saida-data').value;
+            const precoUnit = parseFloat(document.getElementById('saida-preco-unit').value);
+            const valorTotal = parseFloat(document.getElementById('saida-valor-total').value);
 
-                const novaSaida = {
-                    produto_id: prodId,
-                    produto_nome: prod.nome,
-                    produto_marca: prod.marca,
-                    tipo,
-                    quantidade: qtd,
-                    valor_unitario: valorUnit,
-                    valor_total: valorTotal,
-                    vendedor,
-                    data_hora: dataHora || new Date().toISOString()
-                };
+            // Atualizar estoque do produto
+            prod.quantidade = Number(prod.quantidade) - qtdSaida;
 
-                const { error: errSaida } = await supabaseClient
-                    .from('saidas')
-                    .insert([novaSaida]);
-                if (errSaida) throw errSaida;
+            const novaSaida = {
+                id: 's_' + Date.now(),
+                produto_id: prod.id,
+                produto_nome: prod.nome,
+                quantidade: qtdSaida,
+                tipo: tipo,
+                vendedor: vendedor,
+                data: new Date(dataHora).toISOString(),
+                valor_total: valorTotal,
+                preco_unitario: precoUnit
+            };
 
-                showToast("Saída registrada com sucesso e estoque abatido!", "success");
-                document.getElementById('form-saida').reset();
-                setupDefaultDatetime();
-                await loadAllDataFromSupabase();
-                switchTab('acompanhamento');
-            } catch (err) {
-                console.error("Erro ao registrar saída:", err);
-                showToast("Erro ao registrar saída no Supabase.", "error");
+            saidasState.unshift(novaSaida);
+
+            if (supabaseClient) {
+                await supabaseClient.from('produtos').update({ quantidade: prod.quantidade }).eq('id', prod.id);
+                await supabaseClient.from('saidas').insert([novaSaida]);
             }
+
+            showAlert("Saída registrada com sucesso e estoque atualizado!");
+            document.getElementById('form-saida').reset();
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('saida-data').value = now.toISOString().slice(0,16);
+            renderAll();
+            switchTab('acompanhamento');
         }
 
-        // --- TAB 4: ACOMPANHAMENTO DE SAÍDAS ---
-        function renderAcompanhamento() {
-            const periodo = document.getElementById('filtro-periodo').value;
-            const tbody = document.getElementById('tabela-acompanhamento-body');
-            const empty = document.getElementById('empty-acompanhamento');
+        // Vendedor Modal
+        function openVendedorModal() {
+            document.getElementById('vendedor-modal').classList.remove('hidden');
+        }
+        function closeVendedorModal() {
+            document.getElementById('vendedor-modal').classList.add('hidden');
+            document.getElementById('novo-vendedor-nome').value = '';
+        }
+        async function salvarNovoVendedor() {
+            const nome = document.getElementById('novo-vendedor-nome').value.trim();
+            if (!nome) return;
+            if (!vendedoresState.includes(nome)) {
+                vendedoresState.push(nome);
+                if (supabaseClient) {
+                    await supabaseClient.from('vendedores').insert([{ nome }]);
+                }
+                renderVendedoresSelect();
+                document.getElementById('saida-vendedor').value = nome;
+                showAlert(`Vendedor ${nome} adicionado com sucesso!`);
+            }
+            closeVendedorModal();
+        }
+
+        // --- 4. ACOMPANHAMENTO DE SAÍDA ---
+        function setPeriodoFiltro(periodo) {
+            filtroPeriodoAtual = periodo;
+            ['diario', 'semanal', 'mensal', 'todos'].forEach(p => {
+                const btn = document.getElementById('filtro-' + p);
+                if (p === periodo) {
+                    btn.className = "px-3.5 py-2 rounded-xl text-xs font-semibold bg-blue-600 text-white shadow";
+                } else {
+                    btn.className = "px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200";
+                }
+            });
+            renderAcompanhamentoList();
+        }
+
+        function renderAcompanhamentoList() {
+            const tbody = document.getElementById('saidas-table-body');
+            tbody.innerHTML = '';
 
             const now = new Date();
-            const hojeStr = now.toISOString().slice(0, 10);
-
-            const filtradas = saidas.filter(s => {
-                if (!s.data_hora) return true;
-                const dataSaida = s.data_hora.slice(0, 10);
-                const dObj = new Date(s.data_hora);
-
-                if (periodo === 'diario') {
-                    return dataSaida === hojeStr;
-                } else if (periodo === 'semanal') {
-                    const diffTime = Math.abs(now - dObj);
+            const filtered = saidasState.filter(s => {
+                const dataSaida = new Date(s.data);
+                if (filtroPeriodoAtual === 'diario') {
+                    return dataSaida.toDateString() === now.toDateString();
+                } else if (filtroPeriodoAtual === 'semanal') {
+                    const diffTime = Math.abs(now - dataSaida);
                     const diffDays = diffTime / (1000 * 60 * 60 * 24);
                     return diffDays <= 7;
-                } else if (periodo === 'mensal') {
-                    return dObj.getMonth() === now.getMonth() && dObj.getFullYear() === now.getFullYear();
+                } else if (filtroPeriodoAtual === 'mensal') {
+                    return dataSaida.getMonth() === now.getMonth() && dataSaida.getFullYear() === now.getFullYear();
                 }
                 return true;
             });
 
-            const totalQtd = filtradas.reduce((acc, s) => acc + s.quantidade, 0);
-            const totalFaturamento = filtradas.reduce((acc, s) => acc + (s.valor_total || 0), 0);
+            let totalVendasPeriodo = 0;
+            let totalItensPeriodo = 0;
 
-            document.getElementById('stat-saidas-qtd').innerText = totalQtd;
-            document.getElementById('stat-saidas-faturamento').innerText = `R$ ${totalFaturamento.toFixed(2).replace('.', ',')}`;
-
-            if (filtradas.length === 0) {
-                tbody.innerHTML = '';
-                empty.classList.remove('hidden');
-                return;
-            }
-
-            empty.classList.add('hidden');
-            tbody.innerHTML = filtradas.map(s => {
-                const dataFormatada = s.data_hora ? new Date(s.data_hora).toLocaleString('pt-BR') : '-';
-                const isVenda = s.tipo === 'Venda';
-                return `
-                    <tr class="hover:bg-slate-50 transition border-b border-slate-100">
-                        <td class="p-4 text-xs text-slate-500">${dataFormatada}</td>
-                        <td class="p-4 font-medium text-slate-800">${s.produto_nome} <span class="text-xs text-slate-400 font-normal">(${s.produto_marca})</span></td>
-                        <td class="p-4">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${isVenda ? 'bg-emerald-50 text-emerald-700' : 'bg-blue-50 text-blue-700'}">
-                                ${s.tipo}
-                            </span>
-                        </td>
-                        <td class="p-4 font-bold text-slate-800">${s.quantidade}</td>
-                        <td class="p-4 font-bold text-emerald-600">R$ ${(s.valor_total || 0).toFixed(2).replace('.', ',')}</td>
-                        <td class="p-4 text-slate-600">${s.vendedor}</td>
-                        <td class="p-4 text-right space-x-2">
-                            <button onclick="abrirModalEditarSaida('${s.id}')" title="Corrigir / Editar" class="text-brand-600 hover:text-brand-800 p-1"><i class="fa-solid fa-pen-to-square"></i></button>
-                            <button onclick="excluirSaida('${s.id}', '${s.produto_id}', ${s.quantidade})" title="Excluir" class="text-rose-500 hover:text-rose-700 p-1"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        async function excluirSaida(id, produtoId, qtdDevolver) {
-            showConfirmModal("Excluir Saída", "Deseja excluir este registro? A quantidade será estornada de volta ao estoque.", async () => {
-                try {
-                    const prod = produtos.find(p => p.id === produtoId);
-                    if (prod) {
-                        const novaQtd = prod.quantidade + qtdDevolver;
-                        await supabaseClient.from('produtos').update({ quantidade: novaQtd }).eq('id', produtoId);
-                    }
-
-                    const { error } = await supabaseClient.from('saidas').delete().eq('id', id);
-                    if (error) throw error;
-
-                    await loadAllDataFromSupabase();
-                    showToast("Registro de saída excluído e estoque estornado.", "success");
-                } catch (err) {
-                    console.error("Erro ao excluir saída:", err);
-                    showToast("Erro ao excluir registro.", "error");
-                }
-            });
-        }
-
-        function abrirModalEditarSaida(id) {
-            const s = saidas.find(item => item.id === id);
-            if (!s) return;
-
-            const modalHtml = `
-                <div class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 space-y-4">
-                        <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                            <h3 class="font-bold text-slate-800 text-lg">Corrigir Registro de Saída</h3>
-                            <button onclick="fecharModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
-                        </div>
-                        <form id="form-editar-saida" onsubmit="salvarEdicaoSaida(event, '${s.id}', '${s.produto_id}', ${s.quantidade})" class="space-y-4">
-                            <div>
-                                <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Produto</label>
-                                <input type="text" disabled value="${s.produto_nome} (${s.produto_marca})" class="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-sm text-slate-600">
-                            </div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Tipo</label>
-                                    <select id="edit-saida-tipo" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
-                                        <option value="Venda" ${s.tipo === 'Venda' ? 'selected' : ''}>Venda</option>
-                                        <option value="Transferência de Loja" ${s.tipo === 'Transferência de Loja' ? 'selected' : ''}>Transferência</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Quantidade</label>
-                                    <input type="number" id="edit-saida-qtd" min="1" value="${s.quantidade}" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
-                                </div>
-                            </div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Valor Total (R$)</label>
-                                    <input type="number" step="0.01" id="edit-saida-total" value="${s.valor_total}" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Vendedor</label>
-                                    <input type="text" id="edit-saida-vendedor" value="${s.vendedor}" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Data e Hora</label>
-                                <input type="datetime-local" id="edit-saida-data" value="${s.data_hora ? s.data_hora.slice(0,16) : ''}" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
-                            </div>
-                            <div class="pt-3 flex gap-3">
-                                <button type="submit" class="flex-grow bg-brand-600 hover:bg-brand-700 text-white font-medium py-2.5 rounded-xl text-sm transition">Salvar Alterações</button>
-                                <button type="button" onclick="fecharModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium px-4 py-2.5 rounded-xl text-sm transition">Cancelar</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            `;
-            document.getElementById('modal-container').innerHTML = modalHtml;
-        }
-
-        async function salvarEdicaoSaida(e, saidaId, prodId, qtdAntiga) {
-            e.preventDefault();
-            const novoTipo = document.getElementById('edit-saida-tipo').value;
-            const novaQtd = parseInt(document.getElementById('edit-saida-qtd').value) || 0;
-            const novoTotal = parseFloat(document.getElementById('edit-saida-total').value) || 0;
-            const novoVendedor = document.getElementById('edit-saida-vendedor').value.trim();
-            const novaData = document.getElementById('edit-saida-data').value;
-
-            try {
-                const diff = novaQtd - qtdAntiga;
-                if (diff !== 0) {
-                    const prod = produtos.find(p => p.id === prodId);
-                    if (prod) {
-                        const estoqueAtualizado = prod.quantidade - diff;
-                        if (estoqueAtualizado < 0) {
-                            showToast("A quantidade informada excede o estoque disponível.", "error");
-                            return;
-                        }
-                        await supabaseClient.from('produtos').update({ quantidade: estoqueAtualizado }).eq('id', prodId);
-                    }
-                }
-
-                const { error } = await supabaseClient.from('saidas').update({
-                    tipo: novoTipo,
-                    quantidade: novaQtd,
-                    valor_total: novoTotal,
-                    vendedor: novoVendedor,
-                    data_hora: novaData
-                }).eq('id', saidaId);
-
-                if (error) throw error;
-
-                fecharModal();
-                await loadAllDataFromSupabase();
-                showToast("Registro corrigido com sucesso!", "success");
-            } catch (err) {
-                console.error("Erro ao atualizar saída:", err);
-                showToast("Erro ao salvar correção.", "error");
-            }
-        }
-
-        // --- TAB 5: LISTA DE COMPRAS ---
-        function renderListaCompras() {
-            const containerSugestoes = document.getElementById('container-sugestoes');
-            const sugestoes = produtos.filter(p => p.quantidade <= 3);
-
-            if (sugestoes.length === 0) {
-                containerSugestoes.innerHTML = `<p class="text-xs text-slate-400 italic">Nenhum produto com estoque baixo ou zerado no momento.</p>`;
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-6 text-slate-400">Nenhum registro encontrado para este período.</td></tr>`;
             } else {
-                containerSugestoes.innerHTML = sugestoes.map(p => {
-                    const isZero = p.quantidade === 0;
-                    return `
-                        <div class="bg-white p-3 rounded-xl border ${isZero ? 'border-rose-200 bg-rose-50/30' : 'border-amber-200 bg-amber-50/30'} flex items-center justify-between gap-3 shadow-xs">
-                            <div>
-                                <h4 class="font-bold text-slate-800 text-xs">${p.nome}</h4>
-                                <p class="text-slate-500 text-xs">${p.marca} • Estoque: <span class="font-bold ${isZero ? 'text-rose-600' : 'text-amber-600'}">${p.quantidade}</span></p>
-                            </div>
-                            <button onclick="adicionarAoPedido('${p.id}', '${p.nome}', '${p.marca}', ${p.quantidade}, ${isZero ? 10 : 5})" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition whitespace-nowrap shadow-xs">
-                                + Adicionar
-                            </button>
-                        </div>
+                filtered.forEach(s => {
+                    totalVendasPeriodo += Number(s.valor_total || 0);
+                    totalItensPeriodo += Number(s.quantidade || 0);
+
+                    const dataFormatted = new Date(s.data).toLocaleString('pt-BR');
+                    const tipoBadge = s.tipo === 'Venda' 
+                        ? `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-full">Venda</span>`
+                        : `<span class="px-2.5 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">Transferência</span>`;
+
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50/80 transition-colors border-b border-slate-100";
+                    tr.innerHTML = `
+                        <td class="py-3 px-4 text-xs text-slate-600">${dataFormatted}</td>
+                        <td class="py-3 px-4 font-semibold text-slate-800">${s.produto_nome}</td>
+                        <td class="py-3 px-4 text-center">${tipoBadge}</td>
+                        <td class="py-3 px-4 text-center font-bold text-slate-700">${s.quantidade}</td>
+                        <td class="py-3 px-4 text-slate-600">${s.vendedor}</td>
+                        <td class="py-3 px-4 text-right font-bold text-emerald-700">R$ ${Number(s.valor_total).toFixed(2)}</td>
+                        <td class="py-3 px-4 text-right">
+                            <button onclick="abrirEditarSaida('${s.id}')" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition" title="Corrigir Registro"><i class="fa-solid fa-pen-to-square"></i></button>
+                        </td>
                     `;
-                }).join('');
-            }
-
-            renderTabelaPedido();
-        }
-
-        function adicionarAoPedido(id, nome, marca, estoqueAtual, qtdSugerida) {
-            const existe = listaPedido.find(item => item.id === id);
-            if (existe) {
-                existe.qtdPedida += 1;
-            } else {
-                listaPedido.push({
-                    id,
-                    nome,
-                    marca,
-                    estoqueAtual,
-                    qtdPedida: qtdSugerida || 5
+                    tbody.appendChild(tr);
                 });
             }
-            renderTabelaPedido();
-            showToast(`Item adicionado à lista de pedido.`, "success");
+
+            document.getElementById('resumo-total-vendas').innerText = `R$ ${totalVendasPeriodo.toFixed(2)}`;
+            document.getElementById('resumo-total-itens').innerText = `${totalItensPeriodo} un.`;
         }
 
-        function adicionarItemManualCompra() {
-            const nome = prompt("Nome do produto que deseja pedir:");
-            if (!nome) return;
-            const marca = prompt("Marca do produto:") || 'Geral';
-            const qtd = parseInt(prompt("Quantidade desejada:", "10")) || 5;
+        function abrirEditarSaida(id) {
+            const saida = saidasState.find(s => s.id === id);
+            if (!saida) return;
+            document.getElementById('edit-saida-id').value = saida.id;
+            document.getElementById('edit-saida-prod-id').value = saida.produto_id;
+            document.getElementById('edit-saida-old-qtd').value = saida.quantidade;
+            document.getElementById('edit-saida-prod-nome').value = saida.produto_nome;
+            document.getElementById('edit-saida-qtd').value = saida.quantidade;
+            document.getElementById('edit-saida-total').value = saida.valor_total;
+            document.getElementById('edit-saida-vendedor').value = saida.vendedor;
 
-            listaPedido.push({
-                id: 'manual_' + Date.now(),
-                nome,
-                marca,
-                estoqueAtual: 0,
-                qtdPedida: qtd
-            });
-            renderTabelaPedido();
-            showToast("Item manual adicionado à lista.", "success");
+            document.getElementById('edit-saida-modal').classList.remove('hidden');
         }
 
-        function renderTabelaPedido() {
-            const tbody = document.getElementById('tabela-pedido-body');
-            const empty = document.getElementById('empty-pedido');
+        function closeEditSaidaModal() {
+            document.getElementById('edit-saida-modal').classList.add('hidden');
+        }
 
-            if (listaPedido.length === 0) {
-                tbody.innerHTML = '';
-                empty.classList.remove('hidden');
+        async function salvarEdicaoSaida(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-saida-id').value;
+            const prodId = document.getElementById('edit-saida-prod-id').value;
+            const oldQtd = parseInt(document.getElementById('edit-saida-old-qtd').value);
+            const novaQtd = parseInt(document.getElementById('edit-saida-qtd').value);
+            const novoTotal = parseFloat(document.getElementById('edit-saida-total').value);
+            const novoVendedor = document.getElementById('edit-saida-vendedor').value;
+
+            const saida = saidasState.find(s => s.id === id);
+            const prod = produtosState.find(p => p.id === prodId);
+
+            if (saida && prod) {
+                // Reverter a quantidade antiga no estoque e aplicar a nova
+                const diff = novaQtd - oldQtd;
+                prod.quantidade = Number(prod.quantidade) - diff;
+
+                saida.quantidade = novaQtd;
+                saida.valor_total = novoTotal;
+                saida.vendedor = novoVendedor;
+
+                if (supabaseClient) {
+                    await supabaseClient.from('produtos').update({ quantidade: prod.quantidade }).eq('id', prod.id);
+                    await supabaseClient.from('saidas').update({ quantidade: novaQtd, valor_total: novoTotal, vendedor: novoVendedor }).eq('id', id);
+                }
+
+                showAlert("Registro de saída corrigido com sucesso!");
+                closeEditSaidaModal();
+                renderAll();
+            }
+        }
+
+        // --- 5. LISTA DE COMPRAS ---
+        function atualizarSugestoesCompras() {
+            const container = document.getElementById('sugestoes-compras-container');
+            container.innerHTML = '';
+
+            // Produtos zerados ou próximos de acabar (<= 3)
+            const sugestoes = produtosState.filter(p => Number(p.quantidade) <= 3);
+
+            if (sugestoes.length === 0) {
+                container.innerHTML = `<p class="text-xs text-amber-800 col-span-full">Nenhum produto com estoque crítico no momento.</p>`;
                 return;
             }
 
-            empty.classList.add('hidden');
-            tbody.innerHTML = listaPedido.map((item, index) => `
-                <tr class="hover:bg-slate-50 transition border-b border-slate-100">
-                    <td class="p-3">
-                        <p class="font-bold text-slate-800 text-xs">${item.nome}</p>
-                        <p class="text-slate-500 text-xs">${item.marca}</p>
+            sugestoes.forEach(p => {
+                const isZerado = Number(p.quantidade) === 0;
+                const card = document.createElement('div');
+                card.className = "bg-white p-3 rounded-xl border border-amber-200 flex items-center justify-between shadow-sm";
+                card.innerHTML = `
+                    <div>
+                        <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${isZerado ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-800'}">${isZerado ? 'Zerado' : 'Estoque Baixo'}</span>
+                        <h4 class="font-bold text-slate-800 text-sm mt-1">${p.nome}</h4>
+                        <p class="text-xs text-slate-500">${p.marca} • Atual: ${p.quantidade} un.</p>
+                    </div>
+                    <button onclick="adicionarItemCompra('${p.id}')" class="bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-xl text-xs font-semibold shadow transition" title="Adicionar à Lista de Pedido"><i class="fa-solid fa-plus"></i></button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function adicionarItemCompra(prodId, qtdDesejada = 10, customItem = null) {
+            if (customItem) {
+                comprasListaState.push(customItem);
+                renderComprasLista();
+                showAlert("Item manual adicionado à lista de compras!");
+                return;
+            }
+
+            const prod = produtosState.find(p => p.id === prodId);
+            if (!prod) return;
+
+            // Verificar se já está na lista
+            const existe = comprasListaState.find(i => i.id === prodId);
+            if (existe) {
+                existe.qtdPedido += 5;
+            } else {
+                comprasListaState.push({
+                    id: prod.id,
+                    nome: prod.nome,
+                    marca: prod.marca,
+                    qtdEstoque: prod.quantidade,
+                    qtdPedido: 10,
+                    custom: false
+                });
+            }
+            renderComprasLista();
+            showAlert(`Produto ${prod.nome} adicionado à lista de compras!`);
+        }
+
+        function renderComprasLista() {
+            const tbody = document.getElementById('compras-table-body');
+            tbody.innerHTML = '';
+
+            if (comprasListaState.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-slate-400">Nenhum item adicionado à lista de pedido de compras.</td></tr>`;
+                return;
+            }
+
+            comprasListaState.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition-colors border-b border-slate-100";
+                tr.innerHTML = `
+                    <td class="py-3 px-4">
+                        <div class="font-semibold text-slate-800">${item.nome}</div>
+                        <div class="text-xs text-slate-500">${item.marca}</div>
                     </td>
-                    <td class="p-3">
-                        <input type="number" min="1" value="${item.qtdPedida}" onchange="atualizarQtdPedido(${index}, this.value)" class="w-20 px-2 py-1 border border-slate-300 rounded-lg text-xs font-bold text-center">
+                    <td class="py-3 px-4 text-center font-medium text-slate-600">${item.custom ? 'Personalizado' : item.qtdEstoque + ' un.'}</td>
+                    <td class="py-3 px-4 text-center">
+                        <input type="number" min="1" value="${item.qtdPedido}" onchange="atualizarQtdPedido(${index}, this.value)" class="w-20 p-2 text-center bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm">
                     </td>
-                    <td class="p-3 text-xs text-slate-600 font-medium">${item.estoqueAtual !== undefined ? item.estoqueAtual : '-'}</td>
-                    <td class="p-3 text-right">
-                        <button onclick="removerItemPedido(${index})" class="text-rose-500 hover:text-rose-700 p-1"><i class="fa-solid fa-trash text-xs"></i></button>
+                    <td class="py-3 px-4 text-right">
+                        <button onclick="removerItemCompra(${index})" class="p-2 text-red-600 hover:bg-red-50 rounded-xl transition" title="Remover"><i class="fa-solid fa-trash"></i></button>
                     </td>
-                </tr>
-            `).join('');
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
         function atualizarQtdPedido(index, val) {
-            const q = parseInt(val) || 1;
-            listaPedido[index].qtdPedida = q;
+            comprasListaState[index].qtdPedido = parseInt(val) || 1;
         }
 
-        function removerItemPedido(index) {
-            listaPedido.splice(index, 1);
-            renderTabelaPedido();
-            showToast("Item removido da lista.", "info");
+        function removerItemCompra(index) {
+            comprasListaState.splice(index, 1);
+            renderComprasLista();
         }
 
-        function gerarPdfListaCompras() {
-            if (listaPedido.length === 0) {
-                showToast("Adicione itens à lista de pedido antes de gerar o PDF.", "error");
+        function limparListaCompras() {
+            comprasListaState = [];
+            renderComprasLista();
+            showAlert("Lista de compras limpa.");
+        }
+
+        function openCustomItemModal() {
+            document.getElementById('custom-item-modal').classList.remove('hidden');
+        }
+
+        function closeCustomItemModal() {
+            document.getElementById('custom-item-modal').classList.add('hidden');
+            document.getElementById('custom-item-nome').value = '';
+            document.getElementById('custom-item-marca').value = '';
+        }
+
+        function adicionarItemManualCompra() {
+            const nome = document.getElementById('custom-item-nome').value.trim();
+            const marca = document.getElementById('custom-item-marca').value.trim();
+            const qtd = parseInt(document.getElementById('custom-item-qtd').value) || 5;
+
+            if (!nome) {
+                showAlert("Informe o nome do produto.", "error");
                 return;
             }
 
-            try {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
+            adicionarItemCompra(null, qtd, {
+                id: 'custom_' + Date.now(),
+                nome: nome,
+                marca: marca || 'Diversos',
+                qtdEstoque: 'N/A',
+                qtdPedido: qtd,
+                custom: true
+            });
 
-                doc.setFont("Helvetica", "bold");
-                doc.setFontSize(18);
-                doc.setTextColor(10, 37, 64);
-                doc.text("Universo Eletro Hidráulica", 14, 20);
+            closeCustomItemModal();
+        }
 
-                doc.setFontSize(12);
-                doc.setTextColor(100, 116, 139);
-                doc.text("Lista de Pedidos de Reposição de Estoque", 14, 28);
-
-                doc.setFontSize(10);
-                doc.text(`Data de Emissão: ${new Date().toLocaleString('pt-BR')}`, 14, 35);
-
-                const tableData = listaPedido.map((item, idx) => [
-                    idx + 1,
-                    item.nome,
-                    item.marca,
-                    item.estoqueAtual !== undefined ? item.estoqueAtual : 'Novo',
-                    item.qtdPedida
-                ]);
-
-                doc.autoTable({
-                    startY: 42,
-                    head: [['#', 'Produto', 'Marca', 'Estoque Atual', 'Qtd a Pedir']],
-                    body: tableData,
-                    theme: 'grid',
-                    headStyles: { fillColor: [2, 132, 199] },
-                    styles: { fontSize: 10, cellPadding: 4 }
-                });
-
-                doc.save(`lista-compras-universo-eletro-${new Date().toISOString().slice(0,10)}.pdf`);
-                showToast("PDF gerado e baixado com sucesso!", "success");
-            } catch (err) {
-                console.error("Erro ao gerar PDF:", err);
-                showToast("Erro ao gerar PDF.", "error");
+        // --- GERAÇÃO DE PDF ---
+        function gerarPDFCompras() {
+            if (comprasListaState.length === 0) {
+                showAlert("A lista de compras está vazia! Adicione itens antes de gerar o PDF.", "error");
+                return;
             }
-        }
 
-        // --- UTILITY MODALS & TOASTS ---
-        function showToast(message, type = 'success') {
-            const container = document.getElementById('toast-container');
-            if (!container) return;
-            const toast = document.createElement('div');
-            const bgCol = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-rose-600' : 'bg-brand-600';
-            toast.className = `${bgCol} text-white px-4 py-3 rounded-xl shadow-lg text-sm font-medium flex items-center gap-3 pointer-events-auto transition transform translate-y-2 opacity-0 duration-300`;
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Cabeçalho do PDF
+            doc.setFillColor(30, 58, 138); // Azul escuro
+            doc.rect(0, 0, 210, 35, 'F');
             
-            const icon = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-triangle-exclamation' : 'fa-info-circle';
-            toast.innerHTML = `<i class="fa-solid ${icon} text-base"></i><span>${message}</span>`;
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(18);
+            doc.setFont('helvetica', 'bold');
+            doc.text("UNIVERSO ELETRO HIDRÁULICA", 14, 18);
             
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
-            }, 10);
+            doc.setFontSize(11);
+            doc.setFont('helvetica', 'normal');
+            doc.text("Lista Oficial de Pedido / Reposição de Estoque", 14, 26);
 
-            setTimeout(() => {
-                toast.classList.add('translate-y-2', 'opacity-0');
-                setTimeout(() => toast.remove(), 300);
-            }, 3500);
-        }
+            doc.setTextColor(100, 100, 100);
+            doc.setFontSize(10);
+            const dataEmissao = new Date().toLocaleString('pt-BR');
+            doc.text(`Emitido em: ${dataEmissao}`, 14, 45);
 
-        function showConfirmModal(title, message, onConfirm) {
-            const modalHtml = `
-                <div class="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4 text-center">
-                        <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center mx-auto text-xl">
-                            <i class="fa-solid fa-triangle-exclamation"></i>
-                        </div>
-                        <div>
-                            <h3 class="font-bold text-slate-800 text-lg">${title}</h3>
-                            <p class="text-sm text-slate-500 mt-1">${message}</p>
-                        </div>
-                        <div class="flex gap-3 pt-2">
-                            <button id="modal-confirm-btn" class="flex-grow bg-rose-600 hover:bg-rose-700 text-white font-medium py-2.5 rounded-xl text-sm transition shadow">Confirmar</button>
-                            <button onclick="fecharModal()" class="flex-grow bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2.5 rounded-xl text-sm transition">Cancelar</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.getElementById('modal-container').innerHTML = modalHtml;
-            document.getElementById('modal-confirm-btn').onclick = async () => {
-                fecharModal();
-                await onConfirm();
-            };
-        }
+            // Tabela de Itens
+            const tableData = comprasListaState.map((item, idx) => [
+                idx + 1,
+                item.nome,
+                item.marca,
+                item.custom ? 'Item Manual' : item.qtdEstoque,
+                item.qtdPedido
+            ]);
 
-        function fecharModal() {
-            document.getElementById('modal-container').innerHTML = '';
+            doc.autoTable({
+                startY: 52,
+                head: [['#', 'Produto / Material', 'Marca', 'Estoque Atual', 'Qtd Desejada']],
+                body: tableData,
+                theme: 'striped',
+                headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: 'bold' },
+                styles: { fontSize: 10, cellPadding: 5 }
+            });
+
+            // Rodapé
+            const finalY = doc.lastAutoTable.finalY + 20;
+            doc.setFontSize(10);
+            doc.text("___________________________________________________", 14, finalY);
+            doc.text("Assinatura / Autorização de Compra", 14, finalY + 6);
+
+            // Salvar PDF
+            doc.save(`Pedido_Compras_Universo_Eletro_Hidraulica_${new Date().toISOString().slice(0,10)}.pdf`);
+            showAlert("PDF gerado e baixado com sucesso!");
         }
     </script>
 </body>
