@@ -52,7 +52,6 @@
                 <button onclick="mudarAba('compras')" id="btn-aba-compras" class="tab-btn px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-2 text-slate-400 hover:bg-slate-800 hover:text-white">
                     <i class="fa-solid fa-cart-shopping"></i> Lista de Compras
                 </button>
-
             </div>
         </nav>
     </header>
@@ -251,7 +250,6 @@
                     <div>
                         <label class="block text-xs font-medium text-slate-300 mb-1">Vendedor *</label>
                         <select id="saida-vendedor" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
-                            <!-- Preenchido via JS com Douglas, Gleydson, Nicolas, Alexandre + customizados -->
                         </select>
                     </div>
 
@@ -370,7 +368,6 @@
                     <div>
                         <label class="block text-xs font-medium text-slate-300 mb-1">Vendedor</label>
                         <select id="edit-saida-vendedor" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                            <!-- Vendedores -->
                         </select>
                     </div>
                     <div>
@@ -400,21 +397,18 @@
 
     <!-- Script de Lógica e Supabase -->
     <script>
-        // Configuração Supabase
         const SUPABASE_URL = 'https://wwuivpaeldpigajmqclg.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3dWl2cGFlbGRwaWdham1xY2xnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3OTc3MTgsImV4cCI6MjEwODM3MzcxOH0.BBCGPPfXhknNulycPZyOu--A2XKzgo-Tpx3qGfKp0DE';
         
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Estado da Aplicação
         let produtos = [];
         let saidas = [];
         let listaPedido = [];
         let vendedores = ['Douglas', 'Gleydson', 'Nicolas', 'Alexandre'];
         let filtroPeriodoAtual = 'diario';
 
-        // Inicialização
         document.addEventListener('DOMContentLoaded', async () => {
             carregarVendedoresLocais();
             popularSelectVendedores();
@@ -422,8 +416,6 @@
             document.getElementById('pdf-data-geracao').innerText = 'Data: ' + new Date().toLocaleDateString('pt-BR');
 
             await carregarDadosSupabase();
-            
-            // Atualizar status visual
             setInterval(verificarConexao, 30000);
         });
 
@@ -441,23 +433,19 @@
             }
         }
 
-        // Carregar dados das tabelas produtos e saidas do Supabase
         async function carregarDadosSupabase() {
             try {
-                // Carregar Produtos
-                const { data: dadosProdutos, error: errProd } = await _supabase.from('produtos').select('*').order('criado_em', { ascending: false });
+                const { data: dadosProdutos, error: errProd } = await _supabase.from('produtos').select('*');
                 if (errProd) throw errProd;
                 produtos = dadosProdutos || [];
 
-                // Carregar Saídas
-                const { data: dadosSaidas, error: errSaida } = await _supabase.from('saidas').select('*').order('data_hora', { ascending: false });
+                const { data: dadosSaidas, error: errSaida } = await _supabase.from('saidas').select('*');
                 if (errSaida) throw errSaida;
                 saidas = dadosSaidas || [];
 
                 atualizarTodasTelas();
             } catch (err) {
                 console.error("Erro ao carregar dados do Supabase:", err);
-                alert("Erro ao carregar dados do servidor. Verifique sua conexão.");
             }
         }
 
@@ -471,7 +459,6 @@
             renderizarHistoricoSaidas();
         }
 
-        // Navegação de Abas
         function mudarAba(abaId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(el => {
@@ -485,7 +472,6 @@
             btnAtivo.classList.add('bg-blue-600', 'text-white', 'shadow-md', 'shadow-blue-600/20');
         }
 
-        // Gerenciamento de Vendedores
         function carregarVendedoresLocais() {
             const salvos = localStorage.getItem('universo_vendedores');
             if (salvos) {
@@ -532,7 +518,6 @@
             });
         }
 
-        // Conversão de Foto
         function converterFoto(event) {
             const file = event.target.files[0];
             if (file) {
@@ -550,7 +535,6 @@
             }
         }
 
-        // ================= FUNÇÕES DE PRODUTOS =================
         async function salvarProduto(event) {
             event.preventDefault();
             const idEdicao = document.getElementById('edit-produto-id').value;
@@ -562,24 +546,15 @@
 
             try {
                 if (idEdicao) {
-                    // Editar produto existente
                     const { error } = await _supabase.from('produtos').update({ nome, marca, quantidade, preco, foto }).eq('id', idEdicao);
                     if (error) throw error;
                 } else {
-                    // Criar novo produto
-                    const novoId = 'p_' + Date.now();
-                    const { error } = await _supabase.from('produtos').insert([{ id: novoId, nome, marca, quantidade, preco, foto }]);
+                    const payload = { nome, marca, quantidade, preco, foto };
+                    const { error } = await _supabase.from('produtos').insert([payload]);
                     if (error) throw error;
                 }
 
-                document.getElementById('form-produto').reset();
-                document.getElementById('edit-produto-id').value = '';
-                document.getElementById('preview-img').classList.add('hidden');
-                document.getElementById('preview-icon').classList.remove('hidden');
-                document.getElementById('form-titulo-modo').innerText = 'Cadastrar Novo Produto';
-                document.getElementById('btn-cancelar-edicao').classList.add('hidden');
-                document.getElementById('btn-salvar-produto').innerHTML = '<i class="fa-solid fa-check"></i> Salvar Produto no Estoque';
-
+                cancelarEdicaoProduto();
                 await carregarDadosSupabase();
                 alert('Produto salvo com sucesso!');
             } catch (err) {
@@ -653,7 +628,6 @@
             document.getElementById('btn-salvar-produto').innerHTML = '<i class="fa-solid fa-check"></i> Salvar Produto no Estoque';
         }
 
-        // Ajuste Rápido de Estoque (+ e -) na tela de Estoque Disponível
         async function alterarQtdRapida(id, delta) {
             const p = produtos.find(item => item.id == id);
             if (!p) return;
@@ -669,22 +643,20 @@
             }
         }
 
-        // ================= ESTOQUE DISPONÍVEL =================
         function renderizarEstoqueDisponivel() {
             const grid = document.getElementById('grid-estoque');
             grid.innerHTML = '';
             const filtro = document.getElementById('filtro-estoque').value.toLowerCase();
 
-            // Filtrar zerados e aplicar busca
             const disponiveis = produtos.filter(p => p.quantidade > 0 && (p.nome.toLowerCase().includes(filtro) || p.marca.toLowerCase().includes(filtro)));
 
             if (disponiveis.length === 0) {
-                grid.innerHTML = `<div class="col-span-full text-center py-10 text-slate-500 text-sm">Nenhum produto com estoque disponível encontrado. (Produtos zerados são ocultados automaticamente)</div>`;
+                grid.innerHTML = `<div class="col-span-full text-center py-10 text-slate-500 text-sm">Nenhum produto com estoque disponível encontrado.</div>`;
                 return;
             }
 
             disponiveis.forEach(p => {
-                const proximoDeAcabar = p.quantidade <= 3; // Tag de alerta se quantidade menor ou igual a 3
+                const proximoDeAcabar = p.quantidade <= 3;
                 const card = document.createElement('div');
                 card.className = "bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 flex flex-col justify-between shadow-lg relative overflow-hidden";
                 
@@ -714,12 +686,10 @@
             });
         }
 
-        // ================= LISTA DE COMPRAS =================
         function renderizarSugestoesCompras() {
             const container = document.getElementById('lista-sugestoes');
             container.innerHTML = '';
 
-            // Produtos zerados ou próximos de acabar (qtd <= 3)
             const sugeridos = produtos.filter(p => p.quantidade <= 3);
 
             if (sugeridos.length === 0) {
@@ -838,11 +808,9 @@
             html2pdf().from(elemento).set(opt).save();
         }
 
-        // ================= SAÍDA DE PRODUTOS =================
         function atualizarSelectProdutosSaida() {
             const select = document.getElementById('saida-produto');
             select.innerHTML = '<option value="">Selecione do estoque...</option>';
-            // Apenas produtos com estoque maior que 0
             produtos.filter(p => p.quantidade > 0).forEach(p => {
                 const opt = document.createElement('option');
                 opt.value = p.id;
@@ -872,7 +840,7 @@
             const tipo = document.getElementById('saida-tipo').value;
             const quantidade = parseInt(document.getElementById('saida-qtd').value);
             const vendedor = document.getElementById('saida-vendedor').value;
-            const dataHora = document.getElementById('saida-datahora').value;
+            const dataHoraRaw = document.getElementById('saida-datahora').value;
             const valorUnitario = parseFloat(document.getElementById('saida-valor-unit').value);
             const valorTotal = parseFloat(document.getElementById('saida-valor-total').value);
 
@@ -888,15 +856,11 @@
             }
 
             try {
-                // 1. Atualizar estoque do produto
                 const novaQtd = p.quantidade - quantidade;
                 const { error: errProd } = await _supabase.from('produtos').update({ quantidade: novaQtd }).eq('id', produtoId);
                 if (errProd) throw errProd;
 
-                // 2. Inserir registro na tabela saidas
-                const novaSaidaId = 's_' + Date.now();
-                const { error: errSaida } = await _supabase.from('saidas').insert([{
-                    id: novaSaidaId,
+                const payloadSaida = {
                     produto_id: produtoId,
                     produto_nome: `${p.nome} (${p.marca})`,
                     quantidade: quantidade,
@@ -904,8 +868,10 @@
                     vendedor: vendedor,
                     valor_unitario: valorUnitario,
                     valor_total: valorTotal,
-                    data_hora: new Date(dataHora).toISOString()
-                }]);
+                    data_hora: dataHoraRaw ? new Date(dataHoraRaw).toISOString() : new Date().toISOString()
+                };
+
+                const { error: errSaida } = await _supabase.from('saidas').insert([payloadSaida]);
                 if (errSaida) throw errSaida;
 
                 document.getElementById('form-saida').reset();
@@ -920,7 +886,6 @@
             }
         }
 
-        // ================= ACOMPANHAMENTO DE SAÍDA E CORREÇÃO =================
         function mudarFiltroPeriodo(periodo) {
             filtroPeriodoAtual = periodo;
             ['diario', 'semanal', 'mensal', 'todos'].forEach(p => {
@@ -950,7 +915,7 @@
                 } else if (filtroPeriodoAtual === 'mensal') {
                     return dataSaida.getMonth() === agora.getMonth() && dataSaida.getFullYear() === agora.getFullYear();
                 }
-                return true; // todos
+                return true;
             });
 
             let totalQtd = 0;
@@ -996,7 +961,6 @@
             document.getElementById('resumo-valor-saidas').innerText = `R$ ${totalValor.toFixed(2)}`;
         }
 
-        // Funções do Modal de Correção de Saída
         function abrirModalEditarSaida(id) {
             const s = saidas.find(item => item.id == id);
             if (!s) return;
@@ -1008,7 +972,6 @@
             document.getElementById('edit-saida-tipo').value = s.tipo;
             document.getElementById('edit-saida-qtd').value = s.quantidade;
             
-            // Popular select de vendedores no modal
             const selV = document.getElementById('edit-saida-vendedor');
             selV.innerHTML = '';
             vendedores.forEach(v => {
@@ -1019,7 +982,6 @@
             });
             document.getElementById('edit-saida-vendedor').value = s.vendedor;
 
-            // Formatar data para input datetime-local
             const dataLocal = new Date(s.data_hora).toISOString().slice(0, 16);
             document.getElementById('edit-saida-datahora').value = dataLocal;
             document.getElementById('edit-saida-val-unit').value = s.valor_unitario;
@@ -1047,7 +1009,7 @@
             const tipo = document.getElementById('edit-saida-tipo').value;
             const novaQtd = parseInt(document.getElementById('edit-saida-qtd').value);
             const vendedor = document.getElementById('edit-saida-vendedor').value;
-            const dataHora = document.getElementById('edit-saida-datahora').value;
+            const dataHoraRaw = document.getElementById('edit-saida-datahora').value;
             const valorUnitario = parseFloat(document.getElementById('edit-saida-val-unit').value);
             const valorTotal = parseFloat(document.getElementById('edit-saida-val-total').value);
 
@@ -1057,8 +1019,7 @@
                 return;
             }
 
-            // Ajustar estoque considerando a diferença de quantidade
-            const diferencaQtd = novaQtd - qtdAntiga; // se aumentou a qtd da venda, diminui mais do estoque
+            const diferencaQtd = novaQtd - qtdAntiga;
             if (diferencaQtd > 0 && diferencaQtd > p.quantidade) {
                 alert(`Estoque insuficiente para esta alteração. Estoque atual: ${p.quantidade}`);
                 return;
@@ -1071,14 +1032,13 @@
                     if (errProd) throw errProd;
                 }
 
-                // Atualizar registro na tabela saidas
                 const { error: errSaida } = await _supabase.from('saidas').update({
                     tipo: tipo,
                     quantidade: novaQtd,
                     vendedor: vendedor,
                     valor_unitario: valorUnitario,
                     valor_total: valorTotal,
-                    data_hora: new Date(dataHora).toISOString()
+                    data_hora: dataHoraRaw ? new Date(dataHoraRaw).toISOString() : new Date().toISOString()
                 }).eq('id', id);
 
                 if (errSaida) throw errSaida;
@@ -1099,7 +1059,6 @@
             if (!s) return;
 
             try {
-                // Estornar quantidade para o produto
                 if (s.produto_id) {
                     const p = produtos.find(item => item.id == s.produto_id);
                     if (p) {
@@ -1108,7 +1067,6 @@
                     }
                 }
 
-                // Excluir saída
                 const { error } = await _supabase.from('saidas').delete().eq('id', id);
                 if (error) throw error;
 
