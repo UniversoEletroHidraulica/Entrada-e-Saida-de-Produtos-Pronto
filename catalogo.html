@@ -214,26 +214,26 @@
         async function carregarProdutosCatalogo() {
             const elCarregando = document.getElementById('estado-carregando');
             const elVazio = document.getElementById('estado-vazio');
-
+        
             if (!_supabase) {
                 if (elCarregando) elCarregando.classList.add('hidden');
                 if (elVazio) elVazio.classList.remove('hidden');
                 return;
             }
-
+        
             try {
-                // Apenas busca produtos onde quantidade é maior que 0
+                // Seleciona produtos com quantidade maior que zero
                 const { data, error } = await _supabase
                     .from('produtos')
-                    .select('*')
+                    .select('id, nome, marca, quantidade, foto')
                     .gt('quantidade', 0);
-
+        
                 if (error) throw error;
-
+        
                 produtos = data || [];
-
+        
                 if (elCarregando) elCarregando.classList.add('hidden');
-
+        
                 if (produtos.length === 0) {
                     if (elVazio) elVazio.classList.remove('hidden');
                 } else {
