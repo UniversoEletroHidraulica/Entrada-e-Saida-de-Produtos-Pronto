@@ -1,401 +1,4 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Universo Eletro Hidráulica - Controle de Estoque</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Supabase JS Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- html2pdf para gerar PDF da Lista de Compras -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-</head>
-<body class="bg-slate-900 text-slate-100 font-sans min-h-screen pb-20">
-
-    <!-- Header -->
-    <header class="bg-slate-950 border-b border-slate-800 sticky top-0 z-50 shadow-md">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-2">
-            <div class="flex items-center gap-3">
-                <div class="bg-blue-600 p-2.5 rounded-xl text-white shadow-lg shadow-blue-600/30">
-                    <i class="fa-solid fa-bolt text-xl"></i>
-                </div>
-                <div>
-                    <h1 class="text-xl font-bold tracking-tight text-white">Universo Eletro Hidráulica</h1>
-                    <p class="text-xs text-slate-400">Controle de Estoque e Vendas</p>
-                </div>
-            </div>
-            <!-- Status de Sincronização Supabase -->
-            <div id="sync-status" class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>Conectado ao Supabase</span>
-            </div>
-        </div>
-
-        <!-- Menu de Abas (Navegação Responsiva) -->
-        <nav class="bg-slate-900/90 border-t border-slate-800 overflow-x-auto scrollbar-none">
-            <div class="max-w-7xl mx-auto px-2 flex gap-1 py-2">
-                <button onclick="mudarAba('entrada')" id="btn-aba-entrada" class="tab-btn px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-2 bg-blue-600 text-white shadow-md shadow-blue-600/20">
-                    <i class="fa-solid fa-box-archive"></i> Entrada de Produtos
-                </button>
-                <button onclick="mudarAba('saida')" id="btn-aba-saida" class="tab-btn px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-2 text-slate-400 hover:bg-slate-800 hover:text-white">
-                    <i class="fa-solid fa-cash-register"></i> Saída de Produtos
-                </button>
-                <button onclick="mudarAba('acompanhamento')" id="btn-aba-acompanhamento" class="tab-btn px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-2 text-slate-400 hover:bg-slate-800 hover:text-white">
-                    <i class="fa-solid fa-boxes-stacked"></i> Estoque Disponível
-                </button>
-                <button onclick="mudarAba('historico')" id="btn-aba-historico" class="tab-btn px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-2 text-slate-400 hover:bg-slate-800 hover:text-white">
-                    <i class="fa-solid fa-clock-rotate-left"></i> Acompanhamento de Saída
-                </button>
-                <button onclick="mudarAba('compras')" id="btn-aba-compras" class="tab-btn px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold whitespace-nowrap transition-all flex items-center gap-2 text-slate-400 hover:bg-slate-800 hover:text-white">
-                    <i class="fa-solid fa-cart-shopping"></i> Lista de Compras
-                </button>
-            </div>
-        </nav>
-    </header>
-
-    <!-- Main Container -->
-    <main class="max-w-7xl mx-auto px-4 py-6">
-
-        <!-- ================= ABA 1: ENTRADA DE PRODUTOS ================= -->
-        <section id="aba-entrada" class="tab-content space-y-6">
-            <div class="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-5 sm:p-6 shadow-xl backdrop-blur-sm">
-                <div class="flex items-center justify-between mb-4 border-b border-slate-700 pb-3">
-                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-plus-circle text-blue-500"></i> <span id="form-titulo-modo">Cadastrar Novo Produto</span>
-                    </h2>
-                    <button id="btn-cancelar-edicao" onclick="cancelarEdicaoProduto()" class="hidden text-xs bg-rose-500/20 text-rose-300 px-3 py-1 rounded-lg border border-rose-500/30 hover:bg-rose-500/30">Cancelar Edição</button>
-                </div>
-
-                <form id="form-produto" onsubmit="salvarProduto(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <input type="hidden" id="edit-produto-id">
-                    
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Nome do Produto *</label>
-                        <input type="text" id="prod-nome" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500" placeholder="Ex: Disjuntor 40A">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Marca *</label>
-                        <input type="text" id="prod-marca" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500" placeholder="Ex: Siemens / Schneider">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Quantidade Inicial *</label>
-                        <input type="number" id="prod-qtd" min="0" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500" placeholder="0">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Preço Unitário (R$) *</label>
-                        <input type="number" step="0.01" id="prod-preco" min="0" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-blue-500" placeholder="0.00">
-                    </div>
-
-                    <div class="sm:col-span-2 lg:col-span-2">
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Foto do Produto (Câmera ou Galeria)</label>
-                        <div class="flex items-center gap-3">
-                            <input type="file" id="prod-foto-file" accept="image/*" onchange="converterFoto(event)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-300 file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
-                            <div id="preview-container" class="w-12 h-12 rounded-lg bg-slate-900 border border-slate-700 overflow-hidden flex items-center justify-center shrink-0">
-                                <i class="fa-solid fa-image text-slate-500 text-base" id="preview-icon"></i>
-                                <img id="preview-img" class="w-full h-full object-cover hidden" alt="Preview">
-                            </div>
-                        </div>
-                        <input type="hidden" id="prod-foto-base64">
-                    </div>
-
-                    <div class="sm:col-span-2 lg:col-span-3 flex justify-end gap-3 pt-2">
-                        <button type="submit" id="btn-salvar-produto" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white font-medium px-6 py-2.5 rounded-xl text-sm transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-check"></i> Salvar Produto no Estoque
-                        </button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Tabela Rápida de Gerenciamento na Entrada -->
-            <div class="bg-slate-800/40 border border-slate-700/60 rounded-2xl p-5 shadow-xl">
-                <h3 class="text-base font-bold text-white mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-list text-blue-400"></i> Produtos Cadastrados Recentemente
-                </h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-sm">
-                        <thead>
-                            <tr class="border-b border-slate-700 text-xs text-slate-400 uppercase">
-                                <th class="py-3 px-3">Foto</th>
-                                <th class="py-3 px-3">Produto / Marca</th>
-                                <th class="py-3 px-3 text-center">Estoque</th>
-                                <th class="py-3 px-3">Preço Unit.</th>
-                                <th class="py-3 px-3 text-right">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabela-entrada-corpo" class="divide-y divide-slate-800">
-                            <!-- Preenchido via JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- ================= ABA 2: ACOMPANHAMENTO DE ESTOQUE DISPONÍVEL ================= -->
-        <section id="aba-acompanhamento" class="tab-content hidden space-y-6">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-800/50 p-4 rounded-2xl border border-slate-700/60">
-                <div>
-                    <h2 class="text-lg font-bold text-white">Estoque Disponível</h2>
-                    <p class="text-xs text-slate-400">Produtos com estoque ativo (zerados ocultos automaticamente)</p>
-                </div>
-                <div class="w-full sm:w-72 relative">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fa-solid fa-search text-xs"></i></span>
-                    <input type="text" id="filtro-estoque" oninput="renderizarEstoqueDisponivel()" placeholder="Buscar por nome ou marca..." class="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
-                </div>
-            </div>
-
-            <!-- Grade de Cards de Estoque -->
-            <div id="grid-estoque" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                <!-- Preenchido via JS -->
-            </div>
-        </section>
-
-        <!-- ================= ABA 3: LISTA DE COMPRAS ================= -->
-        <section id="aba-compras" class="tab-content hidden space-y-6">
-            <div class="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-5 shadow-xl">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 pb-3 border-b border-slate-700">
-                    <div>
-                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-cart-shopping text-emerald-500"></i> Sugestões e Lista de Pedidos
-                        </h2>
-                        <p class="text-xs text-slate-400">Itens zerados ou próximos de acabar sugeridos automaticamente</p>
-                    </div>
-                    <button onclick="gerarPdfListaCompras()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-file-pdf"></i> Gerar PDF da Lista de Pedidos
-                    </button>
-                </div>
-
-                <!-- Sugestões Automáticas -->
-                <div class="mb-6">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Sugestões Baseadas no Estoque Atual</h3>
-                    <div id="lista-sugestoes" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        <!-- Preenchido via JS -->
-                    </div>
-                </div>
-
-                <!-- Montagem da Lista de Pedido Personalizada -->
-                <div class="border-t border-slate-700 pt-5">
-                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-                        <h3 class="text-sm font-bold text-white">Itens Adicionados à Lista de Pedido</h3>
-                        <div class="flex gap-2 w-full sm:w-auto">
-                            <select id="select-adicionar-pedido" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500 flex-1 sm:w-60">
-                                <option value="">Selecione um produto cadastrado...</option>
-                            </select>
-                            <button onclick="adicionarItemPedidoSelecionado()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap">Adicionar</button>
-                        </div>
-                    </div>
-
-                    <!-- Conteúdo exportável para PDF -->
-                    <div id="pdf-container-conteudo" class="bg-slate-900/80 border border-slate-800 rounded-xl p-4">
-                        <div class="mb-4 pb-2 border-b border-slate-800 flex justify-between items-center">
-                            <div>
-                                <h4 class="font-bold text-white text-sm">Universo Eletro Hidráulica - Pedido de Reposição</h4>
-                                <p class="text-xs text-slate-400" id="pdf-data-geracao">Data: --/--/----</p>
-                            </div>
-                            <span class="text-xs bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-full border border-emerald-500/20 font-medium">Urgente / Reposição</span>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs">
-                                <thead>
-                                    <tr class="text-slate-400 border-b border-slate-800">
-                                        <th class="py-2 px-2">Produto / Marca</th>
-                                        <th class="py-2 px-2 text-center">Qtd Atual</th>
-                                        <th class="py-2 px-2 text-center w-32">Qtd a Pedir</th>
-                                        <th class="py-2 px-2 text-right">Ação</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="tabela-pedido-corpo" class="divide-y divide-slate-800">
-                                    <!-- Preenchido via JS -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ================= ABA 4: SAÍDA DE PRODUTOS ================= -->
-        <section id="aba-saida" class="tab-content hidden space-y-6">
-            <div class="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-5 sm:p-6 shadow-xl">
-                <h2 class="text-lg font-bold text-white mb-4 flex items-center gap-2 border-b border-slate-700 pb-3">
-                    <i class="fa-solid fa-cash-register text-amber-500"></i> Registrar Saída (Venda ou Transferência)
-                </h2>
-
-                <form id="form-saida" onsubmit="salvarSaida(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Selecionar Produto *</label>
-                        <select id="saida-produto" onchange="atualizarPrecoSaida()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
-                            <option value="">Selecione do estoque...</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Tipo de Saída *</label>
-                        <select id="saida-tipo" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
-                            <option value="venda">Venda</option>
-                            <option value="transferencia">Transferência de Loja</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Quantidade *</label>
-                        <input type="number" id="saida-qtd" min="1" value="1" oninput="calcularTotalSaida()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Vendedor *</label>
-                        <select id="saida-vendedor" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Data e Horário *</label>
-                        <input type="datetime-local" id="saida-datahora" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Valor Unitário (R$) (Editável)</label>
-                        <input type="number" step="0.01" id="saida-valor-unit" oninput="calcularTotalSaida()" min="0" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500">
-                    </div>
-
-                    <div class="sm:col-span-2 lg:col-span-3">
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Valor Total (R$) (Editável)</label>
-                        <input type="number" step="0.01" id="saida-valor-total" min="0" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm font-bold text-amber-400 focus:outline-none focus:border-amber-500">
-                    </div>
-
-                    <div class="sm:col-span-2 lg:col-span-3 flex justify-end gap-3 pt-2">
-                        <button type="submit" class="w-full sm:w-auto bg-amber-600 hover:bg-amber-500 text-white font-medium px-6 py-2.5 rounded-xl text-sm transition-all shadow-lg shadow-amber-600/30 flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-check"></i> Confirmar e Dar Baixa no Estoque
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </section>
-
-        <!-- ================= ABA 5: ACOMPANHAMENTO DE SAÍDA ================= -->
-        <section id="aba-historico" class="tab-content hidden space-y-6">
-            <div class="bg-slate-800/50 border border-slate-700/60 rounded-2xl p-5 shadow-xl">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5 pb-3 border-b border-slate-700">
-                    <div>
-                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                            <i class="fa-solid fa-clock-rotate-left text-purple-400"></i> Acompanhamento de Saídas
-                        </h2>
-                        <p class="text-xs text-slate-400">Histórico de vendas e transferências por período</p>
-                    </div>
-                    
-                    <!-- Filtros de Período -->
-                    <div class="flex bg-slate-900 p-1 rounded-xl border border-slate-700 w-full sm:w-auto">
-                        <button onclick="mudarFiltroPeriodo('diario')" id="btn-filtro-diario" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-600 text-white transition-all">Diário</button>
-                        <button onclick="mudarFiltroPeriodo('semanal')" id="btn-filtro-semanal" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all">Semanal</button>
-                        <button onclick="mudarFiltroPeriodo('mensal')" id="btn-filtro-mensal" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all">Mensal</button>
-                        <button onclick="mudarFiltroPeriodo('todos')" id="btn-filtro-todos" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all">Todos</button>
-                    </div>
-                </div>
-
-                <!-- Resumo do Período -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                    <div class="bg-slate-900/70 border border-slate-800 p-4 rounded-xl">
-                        <span class="text-xs text-slate-400 block mb-1">Total de Saídas no Período</span>
-                        <h3 class="text-2xl font-bold text-white" id="resumo-qtd-saidas">0 itens</h3>
-                    </div>
-                    <div class="bg-slate-900/70 border border-slate-800 p-4 rounded-xl">
-                        <span class="text-xs text-slate-400 block mb-1">Valor Total em Vendas/Transferências</span>
-                        <h3 class="text-2xl font-bold text-emerald-400" id="resumo-valor-saidas">R$ 0,00</h3>
-                    </div>
-                </div>
-
-                <!-- Tabela de Histórico -->
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-sm">
-                        <thead>
-                            <tr class="border-b border-slate-700 text-xs text-slate-400 uppercase">
-                                <th class="py-3 px-3">Data / Hora</th>
-                                <th class="py-3 px-3">Produto</th>
-                                <th class="py-3 px-3">Tipo</th>
-                                <th class="py-3 px-3 text-center">Qtd</th>
-                                <th class="py-3 px-3">Vendedor</th>
-                                <th class="py-3 px-3">Total (R$)</th>
-                                <th class="py-3 px-3 text-right">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabela-historico-corpo" class="divide-y divide-slate-800">
-                            <!-- Preenchido via JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-    </main>
-
-    <!-- Modal de Correção / Edição de Saída -->
-    <div id="modal-editar-saida" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg p-6 shadow-2xl">
-            <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-3">
-                <h3 class="text-base font-bold text-white"><i class="fa-solid fa-pen-to-square text-purple-400 mr-2"></i> Corrigir Dados da Saída</h3>
-                <button onclick="fecharModalSaida()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <form id="form-editar-saida" onsubmit="atualizarSaida(event)" class="space-y-4">
-                <input type="hidden" id="edit-saida-id">
-                <input type="hidden" id="edit-saida-prod-id">
-                <input type="hidden" id="edit-saida-qtd-antiga">
-                
-                <div>
-                    <label class="block text-xs font-medium text-slate-300 mb-1">Produto</label>
-                    <input type="text" id="edit-saida-prod-nome" disabled class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-slate-400">
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Tipo</label>
-                        <select id="edit-saida-tipo" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                            <option value="venda">Venda</option>
-                            <option value="transferencia">Transferência</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Quantidade</label>
-                        <input type="number" id="edit-saida-qtd" min="1" oninput="calcularTotalEdicaoSaida()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Vendedor</label>
-                        <select id="edit-saida-vendedor" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Data e Hora</label>
-                        <input type="datetime-local" id="edit-saida-datahora" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Valor Unitário (R$)</label>
-                        <input type="number" step="0.01" id="edit-saida-val-unit" oninput="calcularTotalEdicaoSaida()" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1">Valor Total (R$)</label>
-                        <input type="number" step="0.01" id="edit-saida-val-total" required class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-bold text-amber-400">
-                    </div>
-                </div>
-
-                <div class="flex justify-end gap-2 pt-3 border-t border-slate-700">
-                    <button type="button" onclick="fecharModalSaida()" class="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-xl text-xs font-semibold">Cancelar</button>
-                    <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white px-5 py-2 rounded-xl text-xs font-semibold shadow-lg shadow-purple-600/30">Salvar Correção</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Script de Lógica e Supabase -->
+<!-- Script de Lógica e Supabase -->
     <script>
         const SUPABASE_URL = 'https://wwuivpaeldpigajmqclg.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3dWl2cGFlbGRwaWdham1xY2xnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3OTc3MTgsImV4cCI6MjEwODM3MzcxOH0.BBCGPPfXhknNulycPZyOu--A2XKzgo-Tpx3qGfKp0DE';
@@ -409,15 +12,41 @@
         let vendedores = ['Douglas', 'Gleydson', 'Nicolas', 'Alexandre'];
         let filtroPeriodoAtual = 'diario';
 
-        document.addEventListener('DOMContentLoaded', async () => {
+        // Inicialização garantida após carregamento do DOM
+        window.addEventListener('DOMContentLoaded', () => {
             carregarVendedoresLocais();
             popularSelectVendedores();
-            document.getElementById('saida-datahora').value = new Date().toISOString().slice(0, 16);
-            document.getElementById('pdf-data-geracao').innerText = 'Data: ' + new Date().toLocaleDateString('pt-BR');
+            
+            const campoDataHora = document.getElementById('saida-datahora');
+            if (campoDataHora) campoDataHora.value = new Date().toISOString().slice(0, 16);
+            
+            const campoDataPdf = document.getElementById('pdf-data-geracao');
+            if (campoDataPdf) campoDataPdf.innerText = 'Data: ' + new Date().toLocaleDateString('pt-BR');
 
-            await carregarDadosSupabase();
+            // 1. Carrega primeiro o cache local (Instantâneo)
+            carregarCacheLocal();
+            
+            // 2. Busca do Supabase em segundo plano
+            carregarDadosSupabase();
+            
             setInterval(verificarConexao, 30000);
         });
+
+        // Carrega dados salvos no navegador para exibição imediata
+        function carregarCacheLocal() {
+            const prodCache = localStorage.getItem('universo_produtos_cache');
+            const saidasCache = localStorage.getItem('universo_saidas_cache');
+            
+            if (prodCache) produtos = JSON.parse(prodCache);
+            if (saidasCache) saidas = JSON.parse(saidasCache);
+            
+            atualizarTodasTelas();
+        }
+
+        function salvarCacheLocal() {
+            localStorage.setItem('universo_produtos_cache', JSON.stringify(produtos));
+            localStorage.setItem('universo_saidas_cache', JSON.stringify(saidas));
+        }
 
         async function verificarConexao() {
             try {
@@ -428,8 +57,10 @@
                 badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span>Conectado ao Supabase</span>';
             } catch (err) {
                 const badge = document.getElementById('sync-status');
-                badge.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium";
-                badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500"></span><span>Erro de Sincronização</span>';
+                if (badge) {
+                    badge.className = "flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium";
+                    badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500"></span><span>Erro de Sincronização</span>';
+                }
             }
         }
 
@@ -437,12 +68,14 @@
             try {
                 const { data: dadosProdutos, error: errProd } = await _supabase.from('produtos').select('*');
                 if (errProd) throw errProd;
-                produtos = dadosProdutos || [];
+                if (dadosProdutos) produtos = dadosProdutos;
 
                 const { data: dadosSaidas, error: errSaida } = await _supabase.from('saidas').select('*');
                 if (errSaida) throw errSaida;
-                saidas = dadosSaidas || [];
+                if (dadosSaidas) saidas = dadosSaidas;
 
+                // Salva o resultado mais recente no cache e atualiza a tela
+                salvarCacheLocal();
                 atualizarTodasTelas();
             } catch (err) {
                 console.error("Erro ao carregar dados do Supabase:", err);
@@ -468,8 +101,10 @@
 
             document.getElementById(`aba-${abaId}`).classList.remove('hidden');
             const btnAtivo = document.getElementById(`btn-aba-${abaId}`);
-            btnAtivo.classList.remove('text-slate-400', 'hover:bg-slate-800', 'hover:text-white');
-            btnAtivo.classList.add('bg-blue-600', 'text-white', 'shadow-md', 'shadow-blue-600/20');
+            if (btnAtivo) {
+                btnAtivo.classList.remove('text-slate-400', 'hover:bg-slate-800', 'hover:text-white');
+                btnAtivo.classList.add('bg-blue-600', 'text-white', 'shadow-md', 'shadow-blue-600/20');
+            }
         }
 
         function carregarVendedoresLocais() {
@@ -497,6 +132,7 @@
             });
 
             selects.forEach(select => {
+                if(!select) return;
                 select.onchange = function() {
                     if (this.value === 'OUTRO') {
                         const novoNome = prompt("Digite o nome do novo vendedor:");
@@ -565,6 +201,7 @@
 
         function renderizarTabelaEntrada() {
             const corpo = document.getElementById('tabela-entrada-corpo');
+            if (!corpo) return;
             corpo.innerHTML = '';
 
             if (produtos.length === 0) {
@@ -645,8 +282,9 @@
 
         function renderizarEstoqueDisponivel() {
             const grid = document.getElementById('grid-estoque');
+            if (!grid) return;
             grid.innerHTML = '';
-            const filtro = document.getElementById('filtro-estoque').value.toLowerCase();
+            const filtro = (document.getElementById('filtro-estoque')?.value || '').toLowerCase();
 
             const disponiveis = produtos.filter(p => p.quantidade > 0 && (p.nome.toLowerCase().includes(filtro) || p.marca.toLowerCase().includes(filtro)));
 
@@ -688,6 +326,7 @@
 
         function renderizarSugestoesCompras() {
             const container = document.getElementById('lista-sugestoes');
+            if (!container) return;
             container.innerHTML = '';
 
             const sugeridos = produtos.filter(p => p.quantidade <= 3);
@@ -716,6 +355,7 @@
 
         function atualizarSelectProdutosPedido() {
             const select = document.getElementById('select-adicionar-pedido');
+            if (!select) return;
             select.innerHTML = '<option value="">Selecione um produto cadastrado...</option>';
             produtos.forEach(p => {
                 const opt = document.createElement('option');
@@ -753,6 +393,7 @@
 
         function renderizarTabelaPedido() {
             const corpo = document.getElementById('tabela-pedido-corpo');
+            if (!corpo) return;
             corpo.innerHTML = '';
 
             if (listaPedido.length === 0) {
@@ -810,6 +451,7 @@
 
         function atualizarSelectProdutosSaida() {
             const select = document.getElementById('saida-produto');
+            if (!select) return;
             select.innerHTML = '<option value="">Selecione do estoque...</option>';
             produtos.filter(p => p.quantidade > 0).forEach(p => {
                 const opt = document.createElement('option');
@@ -890,10 +532,12 @@
             filtroPeriodoAtual = periodo;
             ['diario', 'semanal', 'mensal', 'todos'].forEach(p => {
                 const btn = document.getElementById(`btn-filtro-${p}`);
-                if (p === periodo) {
-                    btn.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-600 text-white transition-all";
-                } else {
-                    btn.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all";
+                if (btn) {
+                    if (p === periodo) {
+                        btn.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-600 text-white transition-all";
+                    } else {
+                        btn.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all";
+                    }
                 }
             });
             renderizarHistoricoSaidas();
@@ -901,6 +545,7 @@
 
         function renderizarHistoricoSaidas() {
             const corpo = document.getElementById('tabela-historico-corpo');
+            if (!corpo) return;
             corpo.innerHTML = '';
 
             const agora = new Date();
@@ -1078,5 +723,3 @@
             }
         }
     </script>
-</body>
-</html>
