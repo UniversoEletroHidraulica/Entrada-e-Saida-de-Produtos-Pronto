@@ -18,7 +18,6 @@
         body { font-family: 'Inter', sans-serif; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        /* Custom scrollbar for mobile responsiveness */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -36,13 +35,13 @@
                 </div>
                 <div>
                     <h1 class="text-lg sm:text-xl font-bold tracking-tight">Universo Eletro Hidráulica</h1>
-                    <p class="text-xs text-blue-200">Controle de Estoque e Vendas Inteligente</p>
+                    <p class="text-xs text-blue-200">Controle de Estoque e Vendas em Nuvem</p>
                 </div>
             </div>
             <!-- Sync Status Indicator -->
             <div class="flex items-center gap-2 bg-blue-950/60 px-3 py-1.5 rounded-full text-xs border border-blue-800">
                 <span id="sync-dot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
-                <span id="sync-text" class="text-blue-100 font-medium">Conectando ao Supabase...</span>
+                <span id="sync-text" class="text-blue-100 font-medium">Sincronizando Supabase...</span>
             </div>
         </div>
         
@@ -83,17 +82,15 @@
                 </button>
             </div>
 
-            <!-- Filtro e Busca na Entrada -->
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row gap-3">
                 <div class="relative flex-grow">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                         <i class="fa-solid fa-search"></i>
                     </span>
-                    <input type="text" id="search-entrada" oninput="renderEntradaList()" placeholder="Buscar por nome, marca ou código..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    <input type="text" id="search-entrada" oninput="renderEntradaList()" placeholder="Buscar por nome, marca..." class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                 </div>
             </div>
 
-            <!-- Lista de Produtos para Gerenciamento -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
@@ -108,7 +105,6 @@
                             </tr>
                         </thead>
                         <tbody id="produtos-table-body" class="divide-y divide-slate-100 text-sm">
-                            <!-- Inserido dinamicamente via JS -->
                         </tbody>
                     </table>
                 </div>
@@ -120,27 +116,25 @@
             <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h2 class="text-xl font-bold text-slate-800">Estoque Disponível</h2>
-                    <p class="text-sm text-slate-500">Produtos com estoque maior que zero. Produtos zerados foram ocultados.</p>
+                    <p class="text-sm text-slate-500">Produtos com estoque maior que zero (zerados ocultados).</p>
                 </div>
                 <div class="w-full sm:w-72 relative">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                         <i class="fa-solid fa-search"></i>
                     </span>
-                    <input type="text" id="search-estoque" oninput="renderEstoqueList()" placeholder="Filtrar estoque disponível..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                    <input type="text" id="search-estoque" oninput="renderEstoqueList()" placeholder="Filtrar estoque..." class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                 </div>
             </div>
 
-            <!-- Grid de Estoque Disponível -->
             <div id="estoque-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <!-- Inserido dinamicamente via JS -->
             </div>
         </section>
 
-        <!-- TAB 3: SAÍDA DE PRODUTOS (VENDAS E TRANSFERÊNCIAS) -->
+        <!-- TAB 3: SAÍDA DE PRODUTOS -->
         <section id="tab-saida" class="tab-content space-y-6">
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 max-w-2xl mx-auto">
                 <h2 class="text-xl font-bold text-slate-800 mb-1"><i class="fa-solid fa-cash-register text-blue-600 mr-2"></i> Registrar Saída (Venda ou Transferência)</h2>
-                <p class="text-sm text-slate-500 mb-6">Preencha os dados da transação para dar baixa automática no estoque.</p>
+                <p class="text-sm text-slate-500 mb-6">Preencha os dados da transação para dar baixa automática no estoque em nuvem.</p>
 
                 <form id="form-saida" onsubmit="submitSaida(event)" class="space-y-4">
                     <div>
@@ -169,7 +163,6 @@
                             <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Vendedor *</label>
                             <div class="flex gap-2">
                                 <select id="saida-vendedor" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-                                    <!-- Preenchido via JS -->
                                 </select>
                                 <button type="button" onclick="openVendedorModal()" class="bg-slate-200 hover:bg-slate-300 px-3 py-2 rounded-xl text-slate-700 font-bold" title="Adicionar novo vendedor">+</button>
                             </div>
@@ -203,9 +196,8 @@
             <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h2 class="text-xl font-bold text-slate-800">Acompanhamento de Saídas e Vendas</h2>
-                    <p class="text-sm text-slate-500">Histórico de vendas e transferências realizadas pela equipe.</p>
+                    <p class="text-sm text-slate-500">Histórico unificado em nuvem de vendas e transferências.</p>
                 </div>
-                <!-- Filtros de Período -->
                 <div class="flex flex-wrap items-center gap-2">
                     <button onclick="setPeriodoFiltro('diario')" id="filtro-diario" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-blue-600 text-white shadow">Diário</button>
                     <button onclick="setPeriodoFiltro('semanal')" id="filtro-semanal" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200">Semanal</button>
@@ -214,7 +206,6 @@
                 </div>
             </div>
 
-            <!-- Card Resumo do Período -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div class="bg-gradient-to-br from-blue-900 to-blue-800 text-white p-5 rounded-2xl shadow">
                     <p class="text-xs uppercase tracking-wider text-blue-200 font-medium">Total em Vendas no Período</p>
@@ -226,7 +217,6 @@
                 </div>
             </div>
 
-            <!-- Tabela de Saídas -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
@@ -242,7 +232,6 @@
                             </tr>
                         </thead>
                         <tbody id="saidas-table-body" class="divide-y divide-slate-100 text-sm">
-                            <!-- Preenchido via JS -->
                         </tbody>
                     </table>
                 </div>
@@ -254,7 +243,7 @@
             <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                     <h2 class="text-xl font-bold text-slate-800">Lista de Compras e Reposição</h2>
-                    <p class="text-sm text-slate-500">Sugestões automáticas baseadas em estoque baixo/zerado e pedidos personalizados.</p>
+                    <p class="text-sm text-slate-500">Sugestões automáticas baseadas no estoque em nuvem e pedidos salvos.</p>
                 </div>
                 <div class="flex items-center gap-2 w-full sm:w-auto">
                     <button onclick="openCustomItemModal()" class="flex-1 sm:flex-none bg-slate-800 hover:bg-slate-900 text-white px-4 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2">
@@ -266,17 +255,14 @@
                 </div>
             </div>
 
-            <!-- Sugestões Automáticas -->
             <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5">
                 <h3 class="text-sm font-bold text-amber-900 uppercase tracking-wide mb-3 flex items-center gap-2">
                     <i class="fa-solid fa-triangle-exclamation text-amber-600"></i> Sugestões Automáticas (Zerados ou Próximos de Acabar)
                 </h3>
                 <div id="sugestoes-compras-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                    <!-- Preenchido via JS -->
                 </div>
             </div>
 
-            <!-- Itens Atuais na Lista de Pedido -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                 <div class="p-4 bg-slate-50 border-b border-slate-100 flex justify-between items-center">
                     <h3 class="font-bold text-slate-800 text-sm uppercase tracking-wide">Itens Selecionados para Pedido de Compra</h3>
@@ -293,7 +279,6 @@
                             </tr>
                         </thead>
                         <tbody id="compras-table-body" class="divide-y divide-slate-100 text-sm">
-                            <!-- Preenchido via JS -->
                         </tbody>
                     </table>
                 </div>
@@ -331,10 +316,25 @@
                         <input type="number" id="prod-qtd" min="0" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Foto (URL ou Câmera)</label>
-                        <input type="text" id="prod-foto" placeholder="https://exemplo.com/foto.jpg" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Foto do Produto (Câmera ou Galeria)</label>
+                        <div class="flex items-center gap-3">
+                            <label class="cursor-pointer bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold px-4 py-2.5 rounded-xl border border-blue-200 text-xs flex items-center gap-2 transition flex-1 justify-center">
+                                <i class="fa-solid fa-camera"></i> Escolher Foto
+                                <input type="file" id="prod-foto-file" accept="image/*" onchange="previewImage(event)" class="hidden">
+                            </label>
+                        </div>
+                        <input type="hidden" id="prod-foto">
                     </div>
                 </div>
+                <!-- Preview Image Container -->
+                <div class="flex items-center gap-4 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <img id="img-preview" src="https://placehold.co/80x80/e2e8f0/1e293b?text=Sem+Foto" class="w-16 h-16 rounded-lg object-cover border border-slate-300">
+                    <div class="text-xs text-slate-500">
+                        <p class="font-semibold text-slate-700">Pré-visualização da imagem</p>
+                        <p>Toque em "Escolher Foto" para selecionar da galeria ou tirar uma foto na hora.</p>
+                    </div>
+                </div>
+
                 <div class="flex justify-end gap-3 pt-4 border-t border-slate-100">
                     <button type="button" onclick="closeProductModal()" class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50">Cancelar</button>
                     <button type="submit" class="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow">Salvar Produto</button>
@@ -417,7 +417,6 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Vendedor</label>
                     <select id="edit-saida-vendedor" required class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm">
-                        <!-- Preenchido via JS -->
                     </select>
                 </div>
                 <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
@@ -428,7 +427,7 @@
         </div>
     </div>
 
-    <!-- Custom Notification Box (Instead of alert) -->
+    <!-- Custom Notification Box -->
     <div id="custom-alert" class="fixed bottom-4 right-4 z-50 transform translate-y-20 opacity-0 transition-all duration-300 max-w-sm w-full bg-slate-900 text-white px-5 py-4 rounded-2xl shadow-2xl flex items-center justify-between gap-3 border border-slate-700">
         <div class="flex items-center gap-3">
             <i id="alert-icon" class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
@@ -437,9 +436,8 @@
         <button onclick="hideAlert()" class="text-slate-400 hover:text-white font-bold">&times;</button>
     </div>
 
-    <!-- Supabase Integration Script -->
+    <!-- Supabase Realtime & Persistent Script -->
     <script>
-        // Supabase configuration details provided
         const SUPABASE_URL = 'https://wwuivpaeldpigajmqclg.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3dWl2cGFlbGRwaWdham1xY2xnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI3OTc3MTgsImV4cCI6MjEwODM3MzcxOH0.BBCGPPfXhknNulycPZyOu--A2XKzgo-Tpx3qGfKp0DE';
 
@@ -447,27 +445,24 @@
         let produtosState = [];
         let saidasState = [];
         let vendedoresState = ['Douglas', 'Gleydson', 'Nicolas', 'Alexandre'];
-        let comprasListaState = []; // [{id, nome, marca, qtdEstoque, qtdPedido, custom}]
+        let comprasListaState = [];
         let filtroPeriodoAtual = 'diario';
 
-        // Initialize Supabase & App
         window.addEventListener('DOMContentLoaded', async () => {
             try {
                 if (typeof window.supabase !== 'undefined') {
                     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    updateSyncStatus('online', 'Conectado ao Supabase');
+                    updateSyncStatus('online', 'Conectado ao Supabase (Em Nuvem)');
                     await carregarDadosSupabase();
+                    configurarRealtime();
                 } else {
-                    updateSyncStatus('error', 'Biblioteca Supabase indisponível. Usando memória local.');
-                    carregarDadosMock();
+                    updateSyncStatus('error', 'Biblioteca Supabase indisponível.');
                 }
             } catch (e) {
-                console.error("Erro ao conectar no Supabase:", e);
-                updateSyncStatus('error', 'Erro na conexão. Modo local ativado.');
-                carregarDadosMock();
+                console.error("Erro Supabase:", e);
+                updateSyncStatus('error', 'Erro na conexão.');
             }
 
-            // Inicializar data/hora atual na tela de saída
             const now = new Date();
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
             document.getElementById('saida-data').value = now.toISOString().slice(0,16);
@@ -479,11 +474,9 @@
         function updateSyncStatus(status, text) {
             const dot = document.getElementById('sync-dot');
             const txt = document.getElementById('sync-text');
-            txt.innerText = text;
-            if (status === 'online') {
-                dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
-            } else {
-                dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
+            if(txt) txt.innerText = text;
+            if (dot) {
+                dot.className = status === 'online' ? 'w-2.5 h-2.5 rounded-full bg-emerald-400' : 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
             }
         }
 
@@ -491,22 +484,20 @@
             const alertBox = document.getElementById('custom-alert');
             const alertMsg = document.getElementById('alert-msg');
             const alertIcon = document.getElementById('alert-icon');
+            if(!alertBox) return;
             
             alertMsg.innerText = msg;
             alertIcon.className = type === 'success' ? 'fa-solid fa-circle-check text-emerald-400 text-lg' : 'fa-solid fa-triangle-exclamation text-amber-400 text-lg';
             
             alertBox.classList.remove('translate-y-20', 'opacity-0');
-            setTimeout(() => {
-                hideAlert();
-            }, 4000);
+            setTimeout(() => { hideAlert(); }, 4000);
         }
 
         function hideAlert() {
             const alertBox = document.getElementById('custom-alert');
-            alertBox.classList.add('translate-y-20', 'opacity-0');
+            if(alertBox) alertBox.classList.add('translate-y-20', 'opacity-0');
         }
 
-        // Tab Navigation Switcher
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(el => {
@@ -516,49 +507,54 @@
 
             document.getElementById('tab-' + tabId).classList.add('active');
             const activeBtn = document.getElementById('btn-' + tabId);
-            activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow');
-            activeBtn.classList.remove('text-blue-200');
+            if(activeBtn) {
+                activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow');
+                activeBtn.classList.remove('text-blue-200');
+            }
 
             if (tabId === 'compras') {
                 atualizarSugestoesCompras();
             }
         }
 
-        // Carregar Dados do Supabase
         async function carregarDadosSupabase() {
             if (!supabaseClient) return;
 
-            // Carregar Produtos
+            // 1. Carregar Produtos
             const { data: prodData, error: prodErr } = await supabaseClient.from('produtos').select('*');
             if (!prodErr && prodData) {
                 produtosState = prodData;
-            } else if (prodErr) {
-                console.log("Tabela produtos pode não existir ainda, criando estrutura vazia ou mock.");
             }
 
-            // Carregar Saídas
+            // 2. Carregar Saídas
             const { data: saidaData, error: saidaErr } = await supabaseClient.from('saidas').select('*');
             if (!saidaErr && saidaData) {
-                saidasState = saidaData;
+                saidasState = saidaData.sort((a,b) => new Date(b.data) - new Date(a.data));
             }
 
-            // Carregar Vendedores
+            // 3. Carregar Vendedores
             const { data: vendData, error: vendErr } = await supabaseClient.from('vendedores').select('*');
             if (!vendErr && vendData && vendData.length > 0) {
-                vendedoresState = vendData.map(v => v.nome);
+                const nomes = vendData.map(v => v.nome);
+                vendedoresState = Array.from(new Set([...vendedoresState, ...nomes]));
             }
         }
 
-        function carregarDadosMock() {
-            produtosState = [
-                { id: '1', nome: 'Disjuntor Monofásico 30A', marca: 'Schneider', quantidade: 2, preco: 45.00, foto: 'https://placehold.co/100x100/e2e8f0/1e293b?text=Disjuntor' },
-                { id: '2', nome: 'Cabo Flexível 2.5mm (100m)', marca: 'Prysmian', quantidade: 0, preco: 180.00, foto: 'https://placehold.co/100x100/e2e8f0/1e293b?text=Cabo' },
-                { id: '3', nome: 'Registro de Esfera 3/4"', marca: 'Deca', quantidade: 5, preco: 32.50, foto: 'https://placehold.co/100x100/e2e8f0/1e293b?text=Registro' },
-                { id: '4', nome: 'Tomada Dupla 10A', marca: 'Alumbra', quantidade: 12, preco: 14.90, foto: 'https://placehold.co/100x100/e2e8f0/1e293b?text=Tomada' }
-            ];
-            saidasState = [
-                { id: 's1', produto_id: '1', produto_nome: 'Disjuntor Monofásico 30A', quantidade: 1, tipo: 'Venda', vendedor: 'Douglas', data: new Date().toISOString(), valor_total: 45.00 }
-            ];
+        function configurarRealtime() {
+            if (!supabaseClient) return;
+
+            supabaseClient
+                .channel('public-db-changes')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'produtos' }, payload => {
+                    carregarDadosSupabase().then(() => renderAll());
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'saidas' }, payload => {
+                    carregarDadosSupabase().then(() => renderAll());
+                })
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'vendedores' }, payload => {
+                    carregarDadosSupabase().then(() => renderAll());
+                })
+                .subscribe();
         }
 
         function renderAll() {
@@ -571,10 +567,25 @@
             renderComprasLista();
         }
 
+        // --- FOTO PREVIEW E UPLOAD ---
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const base64String = e.target.result;
+                    document.getElementById('prod-foto').value = base64String;
+                    document.getElementById('img-preview').src = base64String;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
         // --- 1. ENTRADA E CADASTRO ---
         function renderEntradaList() {
             const tbody = document.getElementById('produtos-table-body');
             const query = (document.getElementById('search-entrada')?.value || '').toLowerCase();
+            if(!tbody) return;
             tbody.innerHTML = '';
 
             const filtered = produtosState.filter(p => 
@@ -583,7 +594,7 @@
             );
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Nenhum produto encontrado.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-400">Nenhum produto cadastrado na nuvem.</td></tr>`;
                 return;
             }
 
@@ -598,13 +609,13 @@
                     statusTag = `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 font-semibold text-xs rounded-full">Normal</span>`;
                 }
 
-                const fotoUrl = p.foto && p.foto.trim() !== '' ? p.foto : `https://placehold.co/80x80/e2e8f0/1e293b?text=Foto`;
+                const fotoUrl = p.foto && p.foto.trim() !== '' ? p.foto : `https://placehold.co/80x80/e2e8f0/1e293b?text=Produto`;
 
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50/80 transition-colors border-b border-slate-100";
+                tr.className = "hover:bg-slate-50/85 transition-colors border-b border-slate-100";
                 tr.innerHTML = `
                     <td class="py-3 px-4">
-                        <img src="${fotoUrl}" alt="${p.nome}" onerror="this.src='https://placehold.co/80x80/e2e8f0/1e293b?text=Erro'" class="w-12 h-12 rounded-xl object-cover border border-slate-200">
+                        <img src="${fotoUrl}" alt="${p.nome}" onerror="this.src='https://placehold.co/80x80/e2e8f0/1e293b?text=Foto'" class="w-12 h-12 rounded-xl object-cover border border-slate-200">
                     </td>
                     <td class="py-3 px-4">
                         <div class="font-semibold text-slate-800">${p.nome}</div>
@@ -620,30 +631,34 @@
                     <td class="py-3 px-4 text-right font-semibold text-slate-700">R$ ${Number(p.preco).toFixed(2)}</td>
                     <td class="py-3 px-4 text-center">${statusTag}</td>
                     <td class="py-3 px-4 text-right">
-                        <button onclick="editarProduto('${p.id}')" class="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition mr-1" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                        <button onclick="abrirEditarProduto('${p.id}')" class="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition mr-1" title="Editar"><i class="fa-solid fa-pen"></i></button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function openProductModal(id = null) {
+        function openProductModal() {
             document.getElementById('product-modal').classList.remove('hidden');
-            if (id) {
-                document.getElementById('modal-product-title').innerText = 'Editar Produto';
-                const prod = produtosState.find(p => p.id === id);
-                if (prod) {
-                    document.getElementById('prod-id').value = prod.id;
-                    document.getElementById('prod-nome').value = prod.nome;
-                    document.getElementById('prod-marca').value = prod.marca;
-                    document.getElementById('prod-preco').value = prod.preco;
-                    document.getElementById('prod-qtd').value = prod.quantidade;
-                    document.getElementById('prod-foto').value = prod.foto || '';
-                }
-            } else {
-                document.getElementById('modal-product-title').innerText = 'Cadastrar Novo Produto';
-                document.getElementById('form-produto').reset();
-                document.getElementById('prod-id').value = '';
+            document.getElementById('modal-product-title').innerText = 'Cadastrar Novo Produto';
+            document.getElementById('form-produto').reset();
+            document.getElementById('prod-id').value = '';
+            document.getElementById('prod-foto').value = '';
+            document.getElementById('img-preview').src = 'https://placehold.co/80x80/e2e8f0/1e293b?text=Sem+Foto';
+        }
+
+        function abrirEditarProduto(id) {
+            document.getElementById('product-modal').classList.remove('hidden');
+            document.getElementById('modal-product-title').innerText = 'Editar Produto';
+            const prod = produtosState.find(p => p.id === id);
+            if (prod) {
+                document.getElementById('prod-id').value = prod.id;
+                document.getElementById('prod-nome').value = prod.nome;
+                document.getElementById('prod-marca').value = prod.marca;
+                document.getElementById('prod-preco').value = prod.preco;
+                document.getElementById('prod-qtd').value = prod.quantidade;
+                document.getElementById('prod-foto').value = prod.foto || '';
+                document.getElementById('img-preview').src = prod.foto && prod.foto.trim() !== '' ? prod.foto : 'https://placehold.co/80x80/e2e8f0/1e293b?text=Sem+Foto';
             }
         }
 
@@ -655,40 +670,40 @@
             e.preventDefault();
             const id = document.getElementById('prod-id').value;
             const produtoObj = {
-                nome: document.getElementById('prod-nome').value,
-                marca: document.getElementById('prod-marca').value,
+                nome: document.getElementById('prod-nome').value.trim(),
+                marca: document.getElementById('prod-marca').value.trim(),
                 preco: parseFloat(document.getElementById('prod-preco').value),
                 quantidade: parseInt(document.getElementById('prod-qtd').value),
-                foto: document.getElementById('prod-foto').value
+                foto: document.getElementById('prod-foto').value.trim()
             };
 
             if (id) {
-                // Editar existente
-                const index = produtosState.findIndex(p => p.id === id);
-                if (index !== -1) {
-                    produtosState[index] = { ...produtosState[index], ...produtoObj };
-                }
                 if (supabaseClient) {
-                    await supabaseClient.from('produtos').update(produtoObj).eq('id', id);
+                    const { error } = await supabaseClient.from('produtos').update(produtoObj).eq('id', id);
+                    if (error) {
+                        showAlert("Erro ao atualizar no Supabase: " + error.message, "error");
+                        return;
+                    }
                 }
-                showAlert("Produto atualizado com sucesso!");
+                const index = produtosState.findIndex(p => p.id === id);
+                if (index !== -1) produtosState[index] = { ...produtosState[index], ...produtoObj };
+                showAlert("Produto atualizado na nuvem com sucesso!");
             } else {
-                // Novo produto
                 const novoId = 'p_' + Date.now();
                 const novoProd = { id: novoId, ...produtoObj };
-                produtosState.push(novoProd);
                 if (supabaseClient) {
-                    await supabaseClient.from('produtos').insert([novoProd]);
+                    const { error } = await supabaseClient.from('produtos').insert([novoProd]);
+                    if (error) {
+                        showAlert("Erro ao cadastrar no Supabase: " + error.message, "error");
+                        return;
+                    }
                 }
-                showAlert("Produto cadastrado com sucesso!");
+                produtosState.push(novoProd);
+                showAlert("Produto cadastrado na nuvem com sucesso!");
             }
 
             closeProductModal();
             renderAll();
-        }
-
-        function editarProduto(id) {
-            openProductModal(id);
         }
 
         async function ajustarEstoqueRapido(id, delta) {
@@ -708,9 +723,9 @@
         function renderEstoqueList() {
             const grid = document.getElementById('estoque-grid');
             const query = (document.getElementById('search-estoque')?.value || '').toLowerCase();
+            if(!grid) return;
             grid.innerHTML = '';
 
-            // Retira da lista os produtos zerados
             const disponiveis = produtosState.filter(p => Number(p.quantidade) > 0 && 
                 (p.nome.toLowerCase().includes(query) || p.marca.toLowerCase().includes(query))
             );
@@ -753,6 +768,7 @@
         // --- 3. SAÍDA DE PRODUTOS ---
         function renderSaidaSelect() {
             const select = document.getElementById('saida-produto-id');
+            if(!select) return;
             select.innerHTML = '<option value="">-- Escolha um produto disponível --</option>';
             
             produtosState.filter(p => Number(p.quantidade) > 0).forEach(p => {
@@ -818,7 +834,6 @@
             const precoUnit = parseFloat(document.getElementById('saida-preco-unit').value);
             const valorTotal = parseFloat(document.getElementById('saida-valor-total').value);
 
-            // Atualizar estoque do produto
             prod.quantidade = Number(prod.quantidade) - qtdSaida;
 
             const novaSaida = {
@@ -837,10 +852,13 @@
 
             if (supabaseClient) {
                 await supabaseClient.from('produtos').update({ quantidade: prod.quantidade }).eq('id', prod.id);
-                await supabaseClient.from('saidas').insert([novaSaida]);
+                const { error } = await supabaseClient.from('saidas').insert([novaSaida]);
+                if (error) {
+                    console.error("Erro ao salvar saída no Supabase:", error);
+                }
             }
 
-            showAlert("Saída registrada com sucesso e estoque atualizado!");
+            showAlert("Saída registrada na nuvem com sucesso!");
             document.getElementById('form-saida').reset();
             const now = new Date();
             now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
@@ -849,7 +867,6 @@
             switchTab('acompanhamento');
         }
 
-        // Vendedor Modal
         function openVendedorModal() {
             document.getElementById('vendedor-modal').classList.remove('hidden');
         }
@@ -877,6 +894,7 @@
             filtroPeriodoAtual = periodo;
             ['diario', 'semanal', 'mensal', 'todos'].forEach(p => {
                 const btn = document.getElementById('filtro-' + p);
+                if(!btn) return;
                 if (p === periodo) {
                     btn.className = "px-3.5 py-2 rounded-xl text-xs font-semibold bg-blue-600 text-white shadow";
                 } else {
@@ -888,6 +906,7 @@
 
         function renderAcompanhamentoList() {
             const tbody = document.getElementById('saidas-table-body');
+            if(!tbody) return;
             tbody.innerHTML = '';
 
             const now = new Date();
@@ -921,7 +940,7 @@
                         : `<span class="px-2.5 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full">Transferência</span>`;
 
                     const tr = document.createElement('tr');
-                    tr.className = "hover:bg-slate-50/80 transition-colors border-b border-slate-100";
+                    tr.className = "hover:bg-slate-50/85 transition-colors border-b border-slate-100";
                     tr.innerHTML = `
                         <td class="py-3 px-4 text-xs text-slate-600">${dataFormatted}</td>
                         <td class="py-3 px-4 font-semibold text-slate-800">${s.produto_nome}</td>
@@ -972,7 +991,6 @@
             const prod = produtosState.find(p => p.id === prodId);
 
             if (saida && prod) {
-                // Reverter a quantidade antiga no estoque e aplicar a nova
                 const diff = novaQtd - oldQtd;
                 prod.quantidade = Number(prod.quantidade) - diff;
 
@@ -985,7 +1003,7 @@
                     await supabaseClient.from('saidas').update({ quantidade: novaQtd, valor_total: novoTotal, vendedor: novoVendedor }).eq('id', id);
                 }
 
-                showAlert("Registro de saída corrigido com sucesso!");
+                showAlert("Correção de saída salva na nuvem com sucesso!");
                 closeEditSaidaModal();
                 renderAll();
             }
@@ -994,9 +1012,9 @@
         // --- 5. LISTA DE COMPRAS ---
         function atualizarSugestoesCompras() {
             const container = document.getElementById('sugestoes-compras-container');
+            if(!container) return;
             container.innerHTML = '';
 
-            // Produtos zerados ou próximos de acabar (<= 3)
             const sugestoes = produtosState.filter(p => Number(p.quantidade) <= 3);
 
             if (sugestoes.length === 0) {
@@ -1024,14 +1042,13 @@
             if (customItem) {
                 comprasListaState.push(customItem);
                 renderComprasLista();
-                showAlert("Item manual adicionado à lista de compras!");
+                showAlert("Item manual adicionado à lista!");
                 return;
             }
 
             const prod = produtosState.find(p => p.id === prodId);
             if (!prod) return;
 
-            // Verificar se já está na lista
             const existe = comprasListaState.find(i => i.id === prodId);
             if (existe) {
                 existe.qtdPedido += 5;
@@ -1051,6 +1068,7 @@
 
         function renderComprasLista() {
             const tbody = document.getElementById('compras-table-body');
+            if(!tbody) return;
             tbody.innerHTML = '';
 
             if (comprasListaState.length === 0) {
@@ -1060,7 +1078,7 @@
 
             comprasListaState.forEach((item, index) => {
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50/80 transition-colors border-b border-slate-100";
+                tr.className = "hover:bg-slate-50/85 transition-colors border-b border-slate-100";
                 tr.innerHTML = `
                     <td class="py-3 px-4">
                         <div class="font-semibold text-slate-800">${item.nome}</div>
@@ -1135,8 +1153,7 @@
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
 
-            // Cabeçalho do PDF
-            doc.setFillColor(30, 58, 138); // Azul escuro
+            doc.setFillColor(30, 58, 138);
             doc.rect(0, 0, 210, 35, 'F');
             
             doc.setTextColor(255, 255, 255);
@@ -1153,7 +1170,6 @@
             const dataEmissao = new Date().toLocaleString('pt-BR');
             doc.text(`Emitido em: ${dataEmissao}`, 14, 45);
 
-            // Tabela de Itens
             const tableData = comprasListaState.map((item, idx) => [
                 idx + 1,
                 item.nome,
@@ -1171,13 +1187,11 @@
                 styles: { fontSize: 10, cellPadding: 5 }
             });
 
-            // Rodapé
             const finalY = doc.lastAutoTable.finalY + 20;
             doc.setFontSize(10);
             doc.text("___________________________________________________", 14, finalY);
             doc.text("Assinatura / Autorização de Compra", 14, finalY + 6);
 
-            // Salvar PDF
             doc.save(`Pedido_Compras_Universo_Eletro_Hidraulica_${new Date().toISOString().slice(0,10)}.pdf`);
             showAlert("PDF gerado e baixado com sucesso!");
         }
