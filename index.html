@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universo Eletro Hidráulica - Gestão de Estoque e Vendas</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- html2pdf for generating PDF purchase lists -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            900: '#1e3a8a',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-full flex flex-col antialiased">
+
+    <!-- Modal de Configuração do Supabase (Aparece se faltar credenciais) -->
+    <div id="supabaseModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 sm:p-8 space-y-6">
+            <div class="text-center space-y-2">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 text-blue-600 mb-2">
+                    <i class="fa-solid fa-database text-2xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-900">Configuração do Supabase</h2>
+                <p class="text-sm text-slate-600">Para sincronizar os dados na nuvem para toda a equipe em tempo real (celular e PC), insira as credenciais do seu projeto Supabase.</p>
+            </div>
+            <form id="supabaseForm" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">URL do Projeto Supabase</label>
+                    <input type="text" id="supabaseUrlInput" placeholder="https://xxxx.supabase.co" required
+                        class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Chave Anon / Public Key</label>
+                    <input type="password" id="supabaseKeyInput" placeholder="eyJhbGciOiJIUzI1NiIsIn..." required
+                        class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                </div>
+                <button type="submit" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-cloud-arrow-up"></i> Conectar e Salvar
+                </button>
+            </form>
+            <div class="bg-slate-50 p-4 rounded-xl text-xs text-slate-500 space-y-1 border border-slate-200">
+                <p class="font-semibold text-slate-700"><i class="fa-solid fa-circle-info text-blue-500 mr-1"></i> Dica para GitHub Pages:</p>
+                <p>As configurações ficam salvas no navegador local. O banco Supabase armazenará os produtos, vendas e vendedores em nuvem para todos os acessos.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Mensagem / Alerta Customizado (Substitui alert) -->
+    <div id="customModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center space-y-4">
+            <div id="modalIconContainer" class="w-12 h-12 rounded-full mx-auto flex items-center justify-center text-xl"></div>
+            <h3 id="modalTitle" class="text-lg font-bold text-slate-900">Aviso</h3>
+            <p id="modalMessage" class="text-sm text-slate-600"></p>
+            <div id="modalButtons" class="pt-2 flex gap-3 justify-center">
+                <button onclick="closeCustomModal()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-xl text-sm transition-all">Entendido</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Header -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                    <i class="fa-solid fa-bolt-lightning text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base sm:text-lg tracking-tight leading-tight">Universo Eletro Hidráulica</h1>
+                    <p class="text-xs text-slate-400">Controle de Estoque & Vendas</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <span id="connectionStatus" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></i></span>
+                    <span id="statusText">Conectado ao Supabase</span>
+                </span>
+                <button onclick="openSupabaseSettings()" title="Configurações do Supabase" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Abas de Navegação Inferiores no Header (Scrollável no mobile) -->
+        <nav class="bg-slate-800/80 backdrop-blur border-t border-slate-700 overflow-x-auto hide-scrollbar">
+            <div class="max-w-7xl mx-auto px-4 flex space-x-1 py-2">
+                <button onclick="switchTab('tab-estoque')" id="btn-tab-estoque" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all bg-blue-600 text-white shadow-sm flex items-center gap-2">
+                    <i class="fa-solid fa-boxes-stacked"></i> Produtos / Estoque
+                </button>
+                <button onclick="switchTab('tab-entrada')" id="btn-tab-entrada" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all text-slate-300 hover:bg-slate-700 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-square-plus"></i> Entrada
+                </button>
+                <button onclick="switchTab('tab-acompanhamento')" id="btn-tab-acompanhamento" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all text-slate-300 hover:bg-slate-700 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-check"></i> Estoque Disponível
+                </button>
+                <button onclick="switchTab('tab-compras')" id="btn-tab-compras" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all text-slate-300 hover:bg-slate-700 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-cart-shopping"></i> Lista de Compras
+                </button>
+                <button onclick="switchTab('tab-saida')" id="btn-tab-saida" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all text-slate-300 hover:bg-slate-700 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-cash-register"></i> Saída (Venda/Transf.)
+                </button>
+                <button onclick="switchTab('tab-historico')" id="btn-tab-historico" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all text-slate-300 hover:bg-slate-700 hover:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line"></i> Acompanhamento Saída
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 overflow-y-auto">
+
+        <!-- TAB 1: ESTOQUE / PRODUTOS -->
+        <section id="tab-estoque" class="tab-content space-y-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900">Catálogo de Produtos e Estoque</h2>
+                    <p class="text-sm text-slate-500">Gerencie fotos, marcas, nomes, preços e quantidades com ajustes rápidos.</p>
+                </div>
+                <div class="flex items-center gap-3 w-full sm:w-auto">
+                    <div class="relative flex-1 sm:w-64">
+                        <i class="fa-solid fa-search absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                        <input type="text" id="searchProduto" oninput="renderProdutos()" placeholder="Pesquisar produto ou marca..."
+                            class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    <button onclick="switchTab('tab-entrada')" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-all flex items-center gap-2 whitespace-nowrap">
+                        <i class="fa-solid fa-plus"></i> Novo
+                    </button>
+                </div>
+            </div>
+
+            <!-- Grade de Produtos -->
+            <div id="produtosGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- Preenchido via JS -->
+            </div>
+        </section>
+
+        <!-- TAB 2: ENTRADA DE PRODUTOS -->
+        <section id="tab-entrada" class="tab-content space-y-6 hidden">
+            <div class="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex items-center gap-3 pb-6 border-b border-slate-100 mb-6">
+                    <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-square-plus"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">Entrada de Produtos</h2>
+                        <p class="text-sm text-slate-500">Cadastre um novo item ou adicione mais unidades ao estoque existente.</p>
+                    </div>
+                </div>
+
+                <form id="formEntrada" onsubmit="salvarProdutoEntrada(event)" class="space-y-5">
+                    <input type="hidden" id="editProdutoId">
+                    
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Produto Existente ou Novo?</label>
+                        <select id="selectProdutoExistente" onchange="preencherDadosProdutoExistente()" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                            <option value="">+ Cadastrar Novo Produto</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Nome do Produto *</label>
+                            <input type="text" id="nomeProduto" required placeholder="Ex: Disjuntor Bipolar 40A"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Marca *</label>
+                            <input type="text" id="marcaProduto" required placeholder="Ex: Siemens, Tigre, Schneider"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Quantidade de Entrada *</label>
+                            <input type="number" id="qtdProduto" min="1" required placeholder="Ex: 25"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <p class="text-xs text-slate-400 mt-1" id="infoQtdAtual">Se for produto existente, será somado ao estoque atual.</p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Preço Unitário (R$) *</label>
+                            <input type="number" step="0.01" min="0" id="precoProduto" required placeholder="Ex: 45.90"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Foto do Produto (Câmera ou URL)</label>
+                        <div class="flex gap-2">
+                            <input type="url" id="fotoProduto" placeholder="https://exemplo.com/foto.jpg ou tire foto abaixo"
+                                class="flex-1 px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <label class="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold cursor-pointer flex items-center gap-2 transition-colors">
+                                <i class="fa-solid fa-camera"></i> Câmera
+                                <input type="file" accept="image/*" capture="environment" onchange="converterFotoParaBase64(event)" class="hidden">
+                            </label>
+                        </div>
+                        <div id="previewFotoContainer" class="mt-3 hidden">
+                            <img id="previewFotoImg" class="w-24 h-24 object-cover rounded-xl border border-slate-200 shadow-sm">
+                        </div>
+                    </div>
+
+                    <div class="pt-4 flex gap-3">
+                        <button type="submit" class="flex-1 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-check"></i> Salvar no Estoque
+                        </button>
+                        <button type="button" onclick="limparFormEntrada()" class="px-6 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-all">
+                            Limpar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- TAB 3: ACOMPANHAMENTO DE ESTOQUE DISPONÍVEL -->
+        <section id="tab-acompanhamento" class="tab-content space-y-6 hidden">
+            <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900">Acompanhamento de Estoque Disponível</h2>
+                    <p class="text-sm text-slate-500">Exibe itens em estoque (produtos zerados são ocultados automaticamente).</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Próximos de acabar (&le; 5 un)
+                    </span>
+                </div>
+            </div>
+
+            <!-- Tabela ou Grade de Estoque Disponível -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase text-slate-500 tracking-wider">
+                                <th class="p-4">Foto</th>
+                                <th class="p-4">Produto</th>
+                                <th class="p-4">Marca</th>
+                                <th class="p-4 text-center">Quantidade</th>
+                                <th class="p-4 text-right">Preço Unit.</th>
+                                <th class="p-4 text-center">Status / Tag</th>
+                                <th class="p-4 text-center">Ações Rápidas</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaEstoqueDisponivel" class="divide-y divide-slate-100 text-sm">
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: LISTA DE COMPRAS -->
+        <section id="tab-compras" class="tab-content space-y-6 hidden">
+            <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">Lista de Compras e Sugestão de Pedidos</h2>
+                        <p class="text-sm text-slate-500">Produtos zerados ou próximos de acabar aparecem como sugestão para reposição.</p>
+                    </div>
+                    <button onclick="gerarPdfListaCompras()" class="px-5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-lg shadow-emerald-600/25 transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-file-pdf"></i> Gerar PDF da Lista
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sugestões Automáticas -->
+            <div class="bg-blue-50 border border-blue-200 p-5 rounded-2xl space-y-3">
+                <h3 class="font-bold text-blue-900 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-lightbulb text-blue-600"></i> Sugestões Automáticas do Estoque (Zerados ou Baixos)
+                </h3>
+                <div id="sugestoesComprasGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                    <!-- Preenchido via JS -->
+                </div>
+            </div>
+
+            <!-- Adicionar Item na Lista de Pedidos -->
+            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                <h3 class="font-bold text-slate-900 text-base">Adicionar Item à Lista de Pedidos</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Selecionar do Estoque ou Digitar Novo</label>
+                        <select id="selectItemCompra" onchange="atualizarNomeItemCompra()" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm bg-white">
+                            <option value="">Selecione um produto do estoque ou digite abaixo...</option>
+                        </select>
+                        <input type="text" id="inputNomeItemCompra" placeholder="Ou digite o nome de um novo produto para pedir"
+                            class="w-full mt-2 px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Quantidade para Pedido</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="qtdItemCompra" min="1" value="10" placeholder="Qtd"
+                                class="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm">
+                            <button onclick="adicionarItemListaCompras()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm transition-all whitespace-nowrap">
+                                Adicionar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabela da Lista de Pedidos para PDF -->
+            <div id="pdfConteudoArea" class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+                <div class="flex justify-between items-center border-b border-slate-200 pb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">Universo Eletro Hidráulica</h2>
+                        <p class="text-xs text-slate-500">Lista oficial de Pedido de Reposição de Produtos</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs font-semibold text-slate-600" id="dataAtualPdf"></p>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-xs font-semibold uppercase text-slate-600 tracking-wider">
+                                <th class="p-3">Item / Produto</th>
+                                <th class="p-3">Marca / Obs</th>
+                                <th class="p-3 text-center">Quantidade Pedida</th>
+                                <th class="p-3 text-center w-16">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaListaPedidos" class="divide-y divide-slate-100 text-sm">
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: SAÍDA DE PRODUTOS (VENDA / TRANSFERÊNCIA) -->
+        <section id="tab-saida" class="tab-content space-y-6 hidden">
+            <div class="max-w-2xl mx-auto bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200">
+                <div class="flex items-center gap-3 pb-6 border-b border-slate-100 mb-6">
+                    <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-cash-register"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">Registro de Saída (Venda ou Transferência)</h2>
+                        <p class="text-sm text-slate-500">Retire produtos do estoque com registro completo de valores e vendedor.</p>
+                    </div>
+                </div>
+
+                <form id="formSaida" onsubmit="salvarSaidaProduto(event)" class="space-y-5">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Produto *</label>
+                        <select id="selectProdutoSaida" onchange="selecionarProdutoParaSaida()" required class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Selecione o produto no estoque disponível...</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Tipo de Saída *</label>
+                            <select id="tipoSaida" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <option value="Venda">Venda</option>
+                                <option value="Transferência de Loja">Transferência de Loja</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Quantidade *</label>
+                            <input type="number" id="qtdSaida" min="1" required oninput="calcularTotalSaida()" placeholder="Ex: 2"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <p class="text-xs text-slate-400 mt-1" id="estoqueMaximoSaida">Estoque disponível: -</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Valor Unitário (R$) *</label>
+                            <input type="number" step="0.01" min="0" id="valorUnitarioSaida" required oninput="calcularTotalSaida()" placeholder="Ex: 50.00"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Valor Total (R$) *</label>
+                            <input type="number" step="0.01" min="0" id="valorTotalSaida" required placeholder="Ex: 100.00"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Vendedor *</label>
+                            <select id="vendedorSaida" onchange="verificarNovoVendedor(this)" required class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <!-- Preenchido via JS -->
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1.5">Data e Horário *</label>
+                            <input type="datetime-local" id="dataSaida" required
+                                class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="pt-4 flex gap-3">
+                        <button type="submit" class="flex-1 py-3.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl shadow-lg shadow-amber-600/25 transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-check"></i> Confirmar Saída / Baixa no Estoque
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- TAB 6: ACOMPANHAMENTO DE SAÍDA -->
+        <section id="tab-historico" class="tab-content space-y-6 hidden">
+            <div class="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900">Acompanhamento de Saídas e Histórico</h2>
+                    <p class="text-sm text-slate-500">Filtre vendas e transferências por períodos e corrija registros se necessário.</p>
+                </div>
+                <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+                    <button onclick="mudarFiltroHistorico('diario')" id="btn-filtro-diario" class="px-4 py-2 rounded-lg text-xs font-semibold transition-all bg-white text-slate-900 shadow-sm">Diário</button>
+                    <button onclick="mudarFiltroHistorico('semanal')" id="btn-filtro-semanal" class="px-4 py-2 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900">Semanal</button>
+                    <button onclick="mudarFiltroHistorico('mensal')" id="btn-filtro-mensal" class="px-4 py-2 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900">Mensal</button>
+                    <button onclick="mudarFiltroHistorico('todos')" id="btn-filtro-todos" class="px-4 py-2 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900">Todos</button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold uppercase text-slate-500 tracking-wider">
+                                <th class="p-4">Data / Hora</th>
+                                <th class="p-4">Produto</th>
+                                <th class="p-4 text-center">Tipo</th>
+                                <th class="p-4 text-center">Qtd</th>
+                                <th class="p-4 text-right">Total (R$)</th>
+                                <th class="p-4">Vendedor</th>
+                                <th class="p-4 text-center">Ações (Editar/Excluir)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaHistoricoSaidas" class="divide-y divide-slate-100 text-sm">
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal para Edição de Venda/Transferência -->
+    <div id="modalEditarSaida" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 space-y-4">
+            <h3 class="text-lg font-bold text-slate-900">Corrigir Registro de Saída</h3>
+            <form id="formEditarSaida" onsubmit="atualizarSaidaSalvar(event)" class="space-y-4">
+                <input type="hidden" id="editSaidaId">
+                <input type="hidden" id="editSaidaProdutoId">
+                <input type="hidden" id="editSaidaQtdAntiga">
+                <div>
+                    <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Produto</label>
+                    <input type="text" id="editSaidaProdutoNome" disabled class="w-full px-3 py-2 bg-slate-100 rounded-xl text-sm border border-slate-300">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Quantidade</label>
+                        <input type="number" id="editSaidaQtd" min="1" required class="w-full px-3 py-2 rounded-xl text-sm border border-slate-300">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Valor Total (R$)</label>
+                        <input type="number" step="0.01" id="editSaidaTotal" required class="w-full px-3 py-2 rounded-xl text-sm border border-slate-300">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Vendedor</label>
+                        <input type="text" id="editSaidaVendedor" required class="w-full px-3 py-2 rounded-xl text-sm border border-slate-300">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Data / Hora</label>
+                        <input type="datetime-local" id="editSaidaData" required class="w-full px-3 py-2 rounded-xl text-sm border border-slate-300">
+                    </div>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button type="submit" class="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-sm">Salvar Correção</button>
+                    <button type="button" onclick="fecharModalEdicaoSaida()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-sm">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Novo Vendedor -->
+    <div id="modalNovoVendedor" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4">
+            <h3 class="text-lg font-bold text-slate-900">Cadastrar Novo Vendedor</h3>
+            <p class="text-xs text-slate-500">O nome digitado não consta na lista atual. Deseja adicioná-lo permanentemente?</p>
+            <div>
+                <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Nome do Novo Vendedor</label>
+                <input type="text" id="novoVendedorInput" class="w-full px-3 py-2 rounded-xl text-sm border border-slate-300">
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="salvarNovoVendedor()" class="flex-1 py-2.5 bg-blue-600 text-white font-semibold rounded-xl text-sm">Adicionar</button>
+                <button onclick="cancelarNovoVendedor()" class="px-4 py-2.5 bg-slate-100 text-slate-700 font-semibold rounded-xl text-sm">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Principal da Aplicação e Supabase -->
+    <script>
+        // Configurações do App e Supabase
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'universo-eletro-hidraulica';
+        let supabaseClient = null;
+        let produtos = [];
+        let saidas = [];
+        let vendedores = ["Douglas", "Gleydson", "Nicolas", "Alexandre"];
+        let listaComprasItens = [];
+        let filtroHistoricoAtual = 'diario';
+        let tempVendedorDigitado = "";
+
+        // Inicialização ao carregar a página
+        window.onload = async function() {
+            carregarConfigSupabaseStorage();
+            document.getElementById('dataAtualPdf').innerText = new Date().toLocaleDateString('pt-BR');
+            const agoraLocal = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+            document.getElementById('dataSaida').value = agoraLocal;
+            
+            if (supabaseClient) {
+                await sincronizarDadosSupabase();
+            } else {
+                openSupabaseSettings();
+            }
+        };
+
+        function carregarConfigSupabaseStorage() {
+            const savedUrl = localStorage.getItem('universo_supabase_url');
+            const savedKey = localStorage.getItem('universo_supabase_key');
+            if (savedUrl && savedKey) {
+                document.getElementById('supabaseUrlInput').value = savedUrl;
+                document.getElementById('supabaseKeyInput').value = savedKey;
+                try {
+                    supabaseClient = supabase.createClient(savedUrl, savedKey);
+                    document.getElementById('connectionStatus').className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                    document.getElementById('statusText').innerText = "Conectado ao Supabase";
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+        }
+
+        document.getElementById('supabaseForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const url = document.getElementById('supabaseUrlInput').value.trim();
+            const key = document.getElementById('supabaseKeyInput').value.trim();
+            try {
+                const client = supabase.createClient(url, key);
+                // Testa conexão listando tabela produtos
+                const { error } = await client.from('universo_produtos').select('id').limit(1);
+                if (error && error.code !== 'PGRST116' && error.message.includes('relation') === false) {
+                    // Se tabela não existe, criamos instrução para o usuário ou tentamos
+                }
+                localStorage.setItem('universo_supabase_url', url);
+                localStorage.setItem('universo_supabase_key', key);
+                supabaseClient = client;
+                document.getElementById('supabaseModal').classList.add('hidden');
+                mostrarModalAviso("Sucesso!", "Conectado ao Supabase com sucesso! Os dados agora são em nuvem.", "success");
+                await sincronizarDadosSupabase();
+            } catch (err) {
+                mostrarModalAviso("Erro de Conexão", "Não foi possível conectar ao Supabase. Verifique a URL e a Chave. Detalhes: " + err.message, "error");
+            }
+        });
+
+        function openSupabaseSettings() {
+            document.getElementById('supabaseModal').classList.remove('hidden');
+        }
+
+        async function sincronizarDadosSupabase() {
+            if (!supabaseClient) return;
+            try {
+                // Carregar Produtos
+                const { data: dadosProd, error: errProd } = await supabaseClient.from('universo_produtos').select('*');
+                if (!errProd && dadosProd) {
+                    produtos = dadosProd;
+                } else if (errProd && errProd.code === '42P01') {
+                    // Tabela não existe, criar dados mock iniciais se vazio
+                    produtos = [
+                        { id: '1', nome: 'Disjuntor Bipolar 40A', marca: 'Siemens', qtd: 8, preco: 45.00, foto: 'https://placehold.co/300x300/e2e8f0/1e293b?text=Disjuntor' },
+                        { id: '2', nome: 'Cabo Flexível 2.5mm 100m', marca: 'Cobrecom', qtd: 3, preco: 180.00, foto: 'https://placehold.co/300x300/e2e8f0/1e293b?text=Cabo' },
+                        { id: '3', nome: 'Fita Isolante 20m', marca: '3M', qtd: 0, preco: 12.50, foto: 'https://placehold.co/300x300/e2e8f0/1e293b?text=Fita' }
+                    ];
+                }
+
+                // Carregar Saídas
+                const { data: dadosSaidas, error: errSaida } = await supabaseClient.from('universo_saidas').select('*');
+                if (!errSaida && dadosSaidas) {
+                    saidas = dadosSaidas;
+                }
+
+                // Carregar Vendedores
+                const { data: dadosVend, error: errVend } = await supabaseClient.from('universo_vendedores').select('*');
+                if (!errVend && dadosVend && dadosVend.length > 0) {
+                    vendedores = dadosVend.map(v => v.nome);
+                }
+
+                atualizarInterfaceCompleta();
+            } catch (e) {
+                console.error("Erro ao sincronizar com Supabase:", e);
+                // Fallback para localStorage se falhar rede
+                carregarLocalStorageLocal();
+            }
+        }
+
+        function carregarLocalStorageLocal() {
+            const p = localStorage.getItem('universo_produtos');
+            if (p) produtos = JSON.parse(p);
+            const s = localStorage.getItem('universo_saidas');
+            if (s) saidas = JSON.parse(s);
+            const v = localStorage.getItem('universo_vendedores');
+            if (v) vendedores = JSON.parse(v);
+            atualizarInterfaceCompleta();
+        }
+
+        async function salvarDadosSupabase() {
+            localStorage.setItem('universo_produtos', JSON.stringify(produtos));
+            localStorage.setItem('universo_saidas', JSON.stringify(saidas));
+            localStorage.setItem('universo_vendedores', JSON.stringify(vendedores));
+
+            if (!supabaseClient) return;
+            try {
+                // Upsert produtos
+                for (let prod of produtos) {
+                    await supabaseClient.from('universo_produtos').upsert(prod);
+                }
+                // Upsert saídas
+                for (let saida of saidas) {
+                    await supabaseClient.from('universo_saidas').upsert(saida);
+                }
+            } catch (e) {
+                console.error("Erro ao salvar no Supabase:", e);
+            }
+        }
+
+        // Navegação entre Abas
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = "tab-btn px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all text-slate-300 hover:bg-slate-700 hover:text-white flex items-center gap-2";
+            });
+            const activeBtn = document.getElementById('btn-' + tabId);
+            if (activeBtn) {
+                activeBtn.className = "tab-btn px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all bg-blue-600 text-white shadow-sm flex items-center gap-2";
+            }
+            atualizarInterfaceCompleta();
+        }
+
+        function atualizarInterfaceCompleta() {
+            renderProdutos();
+            renderEstoqueDisponivel();
+            renderSugestoesCompras();
+            renderListaPedidosSelect();
+            renderSelectProdutoSaida();
+            renderVendedoresSelect();
+            renderHistoricoSaidas();
+            renderSelectProdutoExistenteEntrada();
+        }
+
+        // --- ABA 1: PRODUTOS / ESTOQUE ---
+        function renderProdutos() {
+            const termo = document.getElementById('searchProduto').value.toLowerCase();
+            const grid = document.getElementById('produtosGrid');
+            grid.innerHTML = '';
+
+            const filtrados = produtos.filter(p => p.nome.toLowerCase().includes(termo) || p.marca.toLowerCase().includes(termo));
+
+            if (filtrados.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400"><i class="fa-solid fa-box-open text-4xl mb-3"></i><p>Nenhum produto encontrado.</p></div>`;
+                return;
+            }
+
+            filtrados.forEach(p => {
+                const isBaixo = p.qtd <= 5 && p.qtd > 0;
+                const isZerado = p.qtd === 0;
+                let badge = '';
+                if (isZerado) badge = `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">Zerado</span>`;
+                else if (isBaixo) badge = `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Próximo de acabar</span>`;
+                else badge = `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Normal</span>`;
+
+                const fotoUrl = p.foto || 'https://placehold.co/300x300/e2e8f0/1e293b?text=Sem+Foto';
+
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow";
+                card.innerHTML = `
+                    <div>
+                        <div class="h-40 bg-slate-100 relative overflow-hidden">
+                            <img src="${fotoUrl}" onerror="this.src='https://placehold.co/300x300/e2e8f0/1e293b?text=Erro+Foto'" class="w-full h-full object-cover">
+                            <div class="absolute top-3 right-3">${badge}</div>
+                        </div>
+                        <div class="p-4 space-y-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-blue-600">${p.marca}</span>
+                            <h3 class="font-bold text-slate-900 text-base leading-snug">${p.nome}</h3>
+                            <div class="flex justify-between items-center pt-2">
+                                <span class="text-lg font-extrabold text-slate-900">R$ ${Number(p.preco).toFixed(2)}</span>
+                                <span class="text-xs text-slate-500 font-medium">Estoque: <strong>${p.qtd}</strong> un</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-4 pt-0 grid grid-cols-3 gap-2 border-t border-slate-100 mt-2 pt-3">
+                        <button onclick="alterarQtdRapida('${p.id}', -1)" class="py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm transition-colors" title="Retirar 1">-</button>
+                        <button onclick="alterarQtdRapida('${p.id}', 1)" class="py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold rounded-xl text-sm transition-colors" title="Adicionar 1">+</button>
+                        <button onclick="editarProduto('${p.id}')" class="py-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl text-xs transition-colors flex items-center justify-center gap-1" title="Editar dados">
+                            <i class="fa-solid fa-pen"></i> Editar
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        async function alterarQtdRapida(id, delta) {
+            const prod = produtos.find(p => p.id === id);
+            if (!prod) return;
+            prod.qtd = Math.max(0, prod.qtd + delta);
+            await salvarDadosSupabase();
+            atualizarInterfaceCompleta();
+        }
+
+        function editarProduto(id) {
+            const prod = produtos.find(p => p.id === id);
+            if (!prod) return;
+            switchTab('tab-entrada');
+            document.getElementById('editProdutoId').value = prod.id;
+            document.getElementById('nomeProduto').value = prod.nome;
+            document.getElementById('marcaProduto').value = prod.marca;
+            document.getElementById('qtdProduto').value = prod.qtd;
+            document.getElementById('precoProduto').value = prod.preco;
+            document.getElementById('fotoProduto').value = prod.foto || '';
+            if (prod.foto) {
+                document.getElementById('previewFotoImg').src = prod.foto;
+                document.getElementById('previewFotoContainer').classList.remove('hidden');
+            }
+            document.getElementById('selectProdutoExistente').value = prod.id;
+            document.getElementById('infoQtdAtual').innerText = `Estoque atual cadastrado: ${prod.qtd} un. (Modo de edição)`;
+        }
+
+        // --- ABA 2: ENTRADA DE PRODUTOS ---
+        function renderSelectProdutoExistenteEntrada() {
+            const select = document.getElementById('selectProdutoExistente');
+            select.innerHTML = '<option value="">+ Cadastrar Novo Produto</option>';
+            produtos.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.text = `${p.nome} (${p.marca}) - Estoque: ${p.qtd}`;
+                select.appendChild(opt);
+            });
+        }
+
+        function preencherDadosProdutoExistente() {
+            const id = document.getElementById('selectProdutoExistente').value;
+            if (!id) {
+                limparFormEntrada();
+                return;
+            }
+            const prod = produtos.find(p => p.id === id);
+            if (!prod) return;
+            document.getElementById('editProdutoId').value = prod.id;
+            document.getElementById('nomeProduto').value = prod.nome;
+            document.getElementById('marcaProduto').value = prod.marca;
+            document.getElementById('qtdProduto').value = 1;
+            document.getElementById('precoProduto').value = prod.preco;
+            document.getElementById('fotoProduto').value = prod.foto || '';
+            if (prod.foto) {
+                document.getElementById('previewFotoImg').src = prod.foto;
+                document.getElementById('previewFotoContainer').classList.remove('hidden');
+            }
+            document.getElementById('infoQtdAtual').innerText = `Estoque atual: ${prod.qtd} un. A quantidade informada será somada ao estoque.`;
+        }
+
+        function limparFormEntrada() {
+            document.getElementById('formEntrada').reset();
+            document.getElementById('editProdutoId').value = '';
+            document.getElementById('previewFotoContainer').classList.add('hidden');
+            document.getElementById('infoQtdAtual').innerText = 'Se for produto existente, será somado ao estoque atual.';
+        }
+
+        function converterFotoParaBase64(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64 = e.target.result;
+                document.getElementById('fotoProduto').value = base64;
+                document.getElementById('previewFotoImg').src = base64;
+                document.getElementById('previewFotoContainer').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function salvarProdutoEntrada(e) {
+            e.preventDefault();
+            const editId = document.getElementById('editProdutoId').value;
+            const selectExistenteId = document.getElementById('selectProdutoExistente').value;
+            const nome = document.getElementById('nomeProduto').value.trim();
+            const marca = document.getElementById('marcaProduto').value.trim();
+            const qtdInput = parseInt(document.getElementById('qtdProduto').value);
+            const preco = parseFloat(document.getElementById('precoProduto').value);
+            const foto = document.getElementById('fotoProduto').value.trim();
+
+            if (editId && selectExistenteId) {
+                // Editando ou somando estoque existente
+                const prod = produtos.find(p => p.id === editId);
+                if (prod) {
+                    prod.nome = nome;
+                    prod.marca = marca;
+                    prod.preco = preco;
+                    if (foto) prod.foto = foto;
+                    // Se veio do seletor existente com ID correspondente, somamos a quantidade informada ao estoque atual
+                    prod.qtd += qtdInput;
+                }
+            } else if (editId && !selectExistenteId) {
+                const prod = produtos.find(p => p.id === editId);
+                if (prod) {
+                    prod.nome = nome;
+                    prod.marca = marca;
+                    prod.preco = preco;
+                    prod.qtd = qtdInput;
+                    if (foto) prod.foto = foto;
+                }
+            } else {
+                // Verificar se já existe pelo nome/marca
+                const existente = produtos.find(p => p.nome.toLowerCase() === nome.toLowerCase() && p.marca.toLowerCase() === marca.toLowerCase());
+                if (existente) {
+                    existente.qtd += qtdInput;
+                    existente.preco = preco;
+                    if (foto) existente.foto = foto;
+                } else {
+                    const novoProd = {
+                        id: 'prod_' + Date.now() + Math.random().toString(36.2),
+                        nome,
+                        marca,
+                        qtd: qtdInput,
+                        preco,
+                        foto: foto || 'https://placehold.co/300x300/e2e8f0/1e293b?text=Sem+Foto'
+                    };
+                    produtos.push(novoProd);
+                }
+            }
+
+            await salvarDadosSupabase();
+            limparFormEntrada();
+            mostrarModalAviso("Sucesso!", "Produto registrado com sucesso no estoque!", "success");
+            switchTab('tab-estoque');
+        }
+
+        // --- ABA 3: ACOMPANHAMENTO DE ESTOQUE DISPONÍVEL ---
+        function renderEstoqueDisponivel() {
+            const tbody = document.getElementById('tabelaEstoqueDisponivel');
+            tbody.innerHTML = '';
+
+            // Retirando da lista os produtos zerados (qtd === 0)
+            const disponiveis = produtos.filter(p => p.qtd > 0);
+
+            if (disponiveis.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">Nenhum produto disponível em estoque (todos zerados).</td></tr>`;
+                return;
+            }
+
+            disponiveis.forEach(p => {
+                const isBaixo = p.qtd <= 5;
+                let tag = isBaixo ? 
+                    `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Próximo de acabar</span>` :
+                    `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Estoque OK</span>`;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/80 transition-colors border-b border-slate-100";
+                tr.innerHTML = `
+                    <td class="p-4 w-16">
+                        <img src="${p.foto || 'https://placehold.co/100x100'}" class="w-12 h-12 rounded-xl object-cover border border-slate-200">
+                    </td>
+                    <td class="p-4 font-semibold text-slate-900">${p.nome}</td>
+                    <td class="p-4 text-slate-600">${p.marca}</td>
+                    <td class="p-4 text-center font-bold text-slate-900">${p.qtd} un</td>
+                    <td class="p-4 text-right font-medium text-slate-700">R$ ${Number(p.preco).toFixed(2)}</td>
+                    <td class="p-4 text-center">${tag}</td>
+                    <td class="p-4 text-center">
+                        <div class="inline-flex gap-1">
+                            <button onclick="alterarQtdRapida('${p.id}', -1)" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs" title="Retirar 1">-</button>
+                            <button onclick="alterarQtdRapida('${p.id}', 1)" class="w-8 h-8 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold text-xs" title="Adicionar 1">+</button>
+                            <button onclick="editarProduto('${p.id}')" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- ABA 4: LISTA DE COMPRAS ---
+        function renderSugestoesCompras() {
+            const grid = document.getElementById('sugestoesComprasGrid');
+            grid.innerHTML = '';
+
+            // Sugestões: produtos zerados ou próximos de acabar (qtd <= 5)
+            const sugestoes = produtos.filter(p => p.qtd <= 5);
+
+            if (sugestoes.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-sm text-blue-700">Nenhum produto com estoque crítico no momento. O estoque está saudável!</div>`;
+                return;
+            }
+
+            sugestoes.forEach(p => {
+                const statusText = p.qtd === 0 ? 'ZERADO' : `Baixo (${p.qtd} un)`;
+                const card = document.createElement('div');
+                card.className = "bg-white p-3 rounded-xl border border-blue-100 flex items-center justify-between shadow-sm";
+                card.innerHTML = `
+                    <div class="truncate">
+                        <p class="font-bold text-slate-900 text-xs truncate">${p.nome}</p>
+                        <p class="text-xs text-slate-500">${p.marca} • <span class="text-red-600 font-semibold">${statusText}</span></p>
+                    </div>
+                    <button onclick="adicionarSugestaoNaLista('${p.id}', '${p.nome} (${p.marca})')" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold whitespace-nowrap">
+                        + Pedir
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function renderListaPedidosSelect() {
+            const select = document.getElementById('selectItemCompra');
+            select.innerHTML = '<option value="">Selecione um produto do estoque para pedir...</option>';
+            produtos.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.nome + ' (' + p.marca + ')';
+                opt.text = `${p.nome} (${p.marca}) - Estoque atual: ${p.qtd}`;
+                select.appendChild(opt);
+            });
+        }
+
+        function atualizarNomeItemCompra() {
+            const val = document.getElementById('selectItemCompra').value;
+            if (val) {
+                document.getElementById('inputNomeItemCompra').value = val;
+            }
+        }
+
+        function adicionarSugestaoNaLista(id, nomeMarca) {
+            document.getElementById('inputNomeItemCompra').value = nomeMarca;
+            document.getElementById('qtdItemCompra').value = 10;
+            adicionarItemListaCompras();
+        }
+
+        function adicionarItemListaCompras() {
+            const nomeInput = document.getElementById('inputNomeItemCompra').value.trim();
+            const qtd = parseInt(document.getElementById('qtdItemCompra').value) || 1;
+
+            if (!nomeInput) {
+                mostrarModalAviso("Atenção", "Informe ou selecione o nome do produto para a lista de compras.", "warning");
+                return;
+            }
+
+            listaComprasItens.push({
+                id: 'compra_' + Date.now(),
+                nome: nomeInput,
+                qtd: qtd
+            });
+
+            document.getElementById('inputNomeItemCompra').value = '';
+            document.getElementById('selectItemCompra').value = '';
+            document.getElementById('qtdItemCompra').value = 10;
+            renderTabelaListaPedidos();
+        }
+
+        function renderTabelaListaPedidos() {
+            const tbody = document.getElementById('tabelaListaPedidos');
+            tbody.innerHTML = '';
+
+            if (listaComprasItens.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-400">Nenhum produto adicionado à lista de pedidos ainda.</td></tr>`;
+                return;
+            }
+
+            listaComprasItens.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-100 hover:bg-slate-50";
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-slate-900">${item.nome}</td>
+                    <td class="p-3 text-slate-500">Reposição sugerida / Pedido</td>
+                    <td class="p-3 text-center font-bold text-blue-600">${item.qtd} un</td>
+                    <td class="p-3 text-center">
+                        <button onclick="removerItemListaPedido(${index})" class="text-red-500 hover:text-red-700 p-1"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function removerItemListaPedido(index) {
+            listaComprasItens.splice(index, 1);
+            renderTabelaListaPedidos();
+        }
+
+        function gerarPdfListaCompras() {
+            if (listaComprasItens.length === 0) {
+                // Se lista estiver vazia, adiciona sugestões automaticamente para o PDF
+                produtos.filter(p => p.qtd <= 5).forEach(p => {
+                    listaComprasItens.push({
+                        id: 'compra_' + Math.random(),
+                        nome: `${p.nome} (${p.marca})`,
+                        qtd: 10
+                    });
+                });
+                renderTabelaListaPedidos();
+                if (listaComprasItens.length === 0) {
+                    mostrarModalAviso("Aviso", "Adicione produtos à lista de compras antes de gerar o PDF.", "warning");
+                    return;
+                }
+            }
+
+            const element = document.getElementById('pdfConteudoArea');
+            const opt = {
+                margin:       10,
+                filename:     `Lista_Pedidos_Universo_Eletro_${new Date().toISOString().slice(0,10)}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().from(element).set(opt).save();
+        }
+
+        // --- ABA 5: SAÍDA DE PRODUTOS ---
+        function renderSelectProdutoSaida() {
+            const select = document.getElementById('selectProdutoSaida');
+            select.innerHTML = '<option value="">Selecione o produto no estoque disponível...</option>';
+            produtos.filter(p => p.qtd > 0).forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.text = `${p.nome} (${p.marca}) - Disponível: ${p.qtd} - R$ ${Number(p.preco).toFixed(2)}`;
+                select.appendChild(opt);
+            });
+        }
+
+        function selecionarProdutoParaSaida() {
+            const id = document.getElementById('selectProdutoSaida').value;
+            const prod = produtos.find(p => p.id === id);
+            if (!prod) {
+                document.getElementById('estoqueMaximoSaida').innerText = `Estoque disponível: -`;
+                document.getElementById('qtdSaida').value = '';
+                document.getElementById('valorUnitarioSaida').value = '';
+                document.getElementById('valorTotalSaida').value = '';
+                return;
+            }
+            document.getElementById('estoqueMaximoSaida').innerText = `Estoque disponível: ${prod.qtd} unidades`;
+            document.getElementById('qtdSaida').max = prod.qtd;
+            document.getElementById('qtdSaida').value = 1;
+            document.getElementById('valorUnitarioSaida').value = prod.preco;
+            calcularTotalSaida();
+        }
+
+        function calcularTotalSaida() {
+            const qtd = parseFloat(document.getElementById('qtdSaida').value) || 0;
+            const unit = parseFloat(document.getElementById('valorUnitarioSaida').value) || 0;
+            document.getElementById('valorTotalSaida').value = (qtd * unit).toFixed(2);
+        }
+
+        function renderVendedoresSelect() {
+            const select = document.getElementById('vendedorSaida');
+            select.innerHTML = '';
+            vendedores.forEach(v => {
+                const opt = document.createElement('option');
+                opt.value = v;
+                opt.text = v;
+                select.appendChild(opt);
+            });
+            const optOutro = document.createElement('option');
+            optOutro.value = "OUTRO";
+            optOutro.text = "+ Digitar novo vendedor...";
+            select.appendChild(optOutro);
+        }
+
+        function verificarNovoVendedor(select) {
+            if (select.value === "OUTRO") {
+                document.getElementById('modalNovoVendedor').classList.remove('hidden');
+                document.getElementById('novoVendedorInput').value = '';
+            }
+        }
+
+        function salvarNovoVendedor() {
+            const novo = document.getElementById('novoVendedorInput').value.trim();
+            if (!novo) return;
+            if (!vendedores.includes(novo)) {
+                vendedores.push(novo);
+                salvarDadosSupabase();
+            }
+            renderVendedoresSelect();
+            document.getElementById('vendedorSaida').value = novo;
+            document.getElementById('modalNovoVendedor').classList.add('hidden');
+        }
+
+        function cancelarNovoVendedor() {
+            document.getElementById('modalNovoVendedor').classList.add('hidden');
+            document.getElementById('vendedorSaida').value = vendedores[0] || '';
+        }
+
+        async function salvarSaidaProduto(e) {
+            e.preventDefault();
+            const produtoId = document.getElementById('selectProdutoSaida').value;
+            const tipo = document.getElementById('tipoSaida').value;
+            const qtd = parseInt(document.getElementById('qtdSaida').value);
+            const valorUnitario = parseFloat(document.getElementById('valorUnitarioSaida').value);
+            const valorTotal = parseFloat(document.getElementById('valorTotalSaida').value);
+            const vendedor = document.getElementById('vendedorSaida').value;
+            const dataHora = document.getElementById('dataSaida').value;
+
+            const prod = produtos.find(p => p.id === produtoId);
+            if (!prod) return;
+
+            if (qtd > prod.qtd) {
+                mostrarModalAviso("Estoque Insuficiente", `A quantidade solicitada (${qtd}) é maior do que o estoque disponível (${prod.qtd}).`, "warning");
+                return;
+            }
+
+            // Diminui do estoque
+            prod.qtd -= qtd;
+
+            // Registra saída
+            const novaSaida = {
+                id: 'saida_' + Date.now(),
+                produto_id: prod.id,
+                produto_nome: `${prod.nome} (${prod.marca})`,
+                tipo: tipo,
+                qtd: qtd,
+                valor_unitario: valorUnitario,
+                valor_total: valorTotal,
+                vendedor: vendedor,
+                data_hora: dataHora
+            };
+
+            saidas.unshift(novaSaida);
+            await salvarDadosSupabase();
+
+            document.getElementById('formSaida').reset();
+            const agoraLocal = new Date(new Date().getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+            document.getElementById('dataSaida').value = agoraLocal;
+            renderSelectProdutoSaida();
+
+            mostrarModalAviso("Sucesso!", "Saída registrada com baixa no estoque efetuada com sucesso!", "success");
+            switchTab('tab-historico');
+        }
+
+        // --- ABA 6: ACOMPANHAMENTO DE SAÍDA E HISTÓRICO ---
+        function mudarFiltroHistorico(filtro) {
+            filtroHistoricoAtual = filtro;
+            ['diario', 'semanal', 'mensal', 'todos'].forEach(f => {
+                const btn = document.getElementById('btn-filtro-' + f);
+                if (f === filtro) {
+                    btn.className = "px-4 py-2 rounded-lg text-xs font-semibold transition-all bg-white text-slate-900 shadow-sm";
+                } else {
+                    btn.className = "px-4 py-2 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900";
+                }
+            });
+            renderHistoricoSaidas();
+        }
+
+        function renderHistoricoSaidas() {
+            const tbody = document.getElementById('tabelaHistoricoSaidas');
+            tbody.innerHTML = '';
+
+            const agora = new Date();
+            let filtradas = saidas.filter(s => {
+                const dataSaida = new Date(s.data_hora);
+                if (filtroHistoricoAtual === 'diario') {
+                    return dataSaida.toDateString() === agora.toDateString();
+                } else if (filtroHistoricoAtual === 'semanal') {
+                    const diffTime = Math.abs(agora - dataSaida);
+                    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+                    return diffDays <= 7;
+                } else if (filtroHistoricoAtual === 'mensal') {
+                    return dataSaida.getMonth() === agora.getMonth() && dataSaida.getFullYear() === agora.getFullYear();
+                }
+                return true; // todos
+            });
+
+            if (filtradas.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-400">Nenhum registro de saída encontrado para este período.</td></tr>`;
+                return;
+            }
+
+            filtradas.forEach(s => {
+                const dataFormatada = new Date(s.data_hora).toLocaleString('pt-BR');
+                const badgeTipo = s.tipo === 'Venda' ? 
+                    `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700">Venda</span>` :
+                    `<span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">Transferência</span>`;
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-slate-100 hover:bg-slate-50";
+                tr.innerHTML = `
+                    <td class="p-4 text-xs text-slate-600">${dataFormatada}</td>
+                    <td class="p-4 font-semibold text-slate-900">${s.produto_nome}</td>
+                    <td class="p-4 text-center">${badgeTipo}</td>
+                    <td class="p-4 text-center font-bold text-slate-900">${s.qtd} un</td>
+                    <td class="p-4 text-right font-medium text-slate-700">R$ ${Number(s.valor_total).toFixed(2)}</td>
+                    <td class="p-4 text-slate-700">${s.vendedor}</td>
+                    <td class="p-4 text-center">
+                        <div class="inline-flex gap-2">
+                            <button onclick="abrirEdicaoSaida('${s.id}')" class="p-2 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs" title="Corrigir Dados"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="excluirSaida('${s.id}')" class="p-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 text-xs" title="Excluir"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function abrirEdicaoSaida(id) {
+            const s = saidas.find(item => item.id === id);
+            if (!s) return;
+            document.getElementById('editSaidaId').value = s.id;
+            document.getElementById('editSaidaProdutoId').value = s.produto_id;
+            document.getElementById('editSaidaQtdAntiga').value = s.qtd;
+            document.getElementById('editSaidaProdutoNome').value = s.produto_nome;
+            document.getElementById('editSaidaQtd').value = s.qtd;
+            document.getElementById('editSaidaTotal').value = s.valor_total;
+            document.getElementById('editSaidaVendedor').value = s.vendedor;
+            document.getElementById('editSaidaData').value = s.data_hora;
+            document.getElementById('modalEditarSaida').classList.remove('hidden');
+        }
+
+        function fecharModalEdicaoSaida() {
+            document.getElementById('modalEditarSaida').classList.add('hidden');
+        }
+
+        async function atualizarSaidaSalvar(e) {
+            e.preventDefault();
+            const id = document.getElementById('editSaidaId').value;
+            const produtoId = document.getElementById('editSaidaProdutoId').value;
+            const qtdAntiga = parseInt(document.getElementById('editSaidaQtdAntiga').value);
+            const novaQtd = parseInt(document.getElementById('editSaidaQtd').value);
+            const novoTotal = parseFloat(document.getElementById('editSaidaTotal').value);
+            const novoVendedor = document.getElementById('editSaidaVendedor').value.trim();
+            const novaData = document.getElementById('editSaidaData').value;
+
+            const s = saidas.find(item => item.id === id);
+            if (!s) return;
+
+            const prod = produtos.find(p => p.id === produtoId);
+            if (prod) {
+                // Ajusta o estoque devolvendo a quantidade antiga e tirando a nova
+                const diff = novaQtd - qtdAntiga;
+                if (prod.qtd - diff < 0) {
+                    mostrarModalAviso("Erro", "A quantidade nova excede o estoque disponível atual.", "warning");
+                    return;
+                }
+                prod.qtd -= diff;
+            }
+
+            s.qtd = novaQtd;
+            s.valor_total = novoTotal;
+            s.vendedor = novoVendedor;
+            s.data_hora = novaData;
+
+            await salvarDadosSupabase();
+            fecharModalEdicaoSaida();
+            mostrarModalAviso("Sucesso!", "Registro de saída corrigido com sucesso!", "success");
+            atualizarInterfaceCompleta();
+        }
+
+        async function excluirSaida(id) {
+            const index = saidas.findIndex(item => item.id === id);
+            if (index === -1) return;
+            const s = saidas[index];
+
+            // Devolve quantidade ao estoque
+            const prod = produtos.find(p => p.id === s.produto_id);
+            if (prod) {
+                prod.qtd += s.qtd;
+            }
+
+            saidas.splice(index, 1);
+            await salvarDadosSupabase();
+            mostrarModalAviso("Sucesso", "Registro excluído e estoque restaurado.", "success");
+            atualizarInterfaceCompleta();
+        }
+
+        // Funções de Modal Customizado (Substitui alert)
+        function mostrarModalAviso(titulo, mensagem, tipo = "info") {
+            document.getElementById('modalTitle').innerText = titulo;
+            document.getElementById('modalMessage').innerText = mensagem;
+            const iconContainer = document.getElementById('modalIconContainer');
+            if (tipo === "success") {
+                iconContainer.className = "w-12 h-12 rounded-full mx-auto flex items-center justify-center text-xl bg-emerald-100 text-emerald-600";
+                iconContainer.innerHTML = '<i class="fa-solid fa-check"></i>';
+            } else if (tipo === "warning") {
+                iconContainer.className = "w-12 h-12 rounded-full mx-auto flex items-center justify-center text-xl bg-amber-100 text-amber-600";
+                iconContainer.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i>';
+            } else {
+                iconContainer.className = "w-12 h-12 rounded-full mx-auto flex items-center justify-center text-xl bg-blue-100 text-blue-600";
+                iconContainer.innerHTML = '<i class="fa-solid fa-info"></i>';
+            }
+            document.getElementById('customModal').classList.remove('hidden');
+        }
+
+        function closeCustomModal() {
+            document.getElementById('customModal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
